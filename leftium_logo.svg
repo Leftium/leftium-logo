@@ -1,0 +1,670 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="7019.3853"
+   height="1163.0062"
+   id="svg4713"
+   version="1.1"
+   inkscape:version="0.48.1 "
+   sodipodi:docname="leftium_logo.svg">
+  <defs
+     id="defs4715">
+    <linearGradient
+       id="linearGradient4790">
+      <stop
+         id="stop4792"
+         offset="0"
+         style="stop-color:#000080;stop-opacity:1;" />
+      <stop
+         style="stop-color:#0000ff;stop-opacity:1;"
+         offset="0.37499312"
+         id="stop4794" />
+      <stop
+         id="stop4796"
+         offset="1"
+         style="stop-color:#000080;stop-opacity:1;" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient5379">
+      <stop
+         style="stop-color:#000080;stop-opacity:1;"
+         offset="0"
+         id="stop5381" />
+      <stop
+         id="stop5387"
+         offset="0.37456727"
+         style="stop-color:#0000ff;stop-opacity:1;" />
+      <stop
+         style="stop-color:#000080;stop-opacity:1;"
+         offset="1"
+         id="stop5383" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient5379"
+       id="linearGradient5385"
+       x1="0"
+       y1="6425.6606"
+       x2="848.52814"
+       y2="5577.1323"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(0,-4000)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient5379-5"
+       id="linearGradient5385-8"
+       x1="0"
+       y1="6425.6606"
+       x2="848.52814"
+       y2="5577.1323"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       id="linearGradient5379-5">
+      <stop
+         style="stop-color:#000080;stop-opacity:1;"
+         offset="0"
+         id="stop5381-1" />
+      <stop
+         id="stop5387-0"
+         offset="0.37456727"
+         style="stop-color:#0000ff;stop-opacity:1;" />
+      <stop
+         style="stop-color:#000080;stop-opacity:1;"
+         offset="1"
+         id="stop5383-8" />
+    </linearGradient>
+    <linearGradient
+       gradientTransform="translate(-4.3164063e-6,-2500.0109)"
+       y2="5577.1323"
+       x2="848.52814"
+       y1="6425.6606"
+       x1="0"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient5413"
+       xlink:href="#linearGradient5379-5"
+       inkscape:collect="always" />
+    <linearGradient
+       gradientTransform="translate(-4.3164063e-6,1499.9891)"
+       y2="5577.1323"
+       x2="848.52814"
+       y1="6425.6606"
+       x1="0"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient5413-7"
+       xlink:href="#linearGradient5379-5-6"
+       inkscape:collect="always" />
+    <linearGradient
+       id="linearGradient5379-5-6">
+      <stop
+         style="stop-color:#000080;stop-opacity:1;"
+         offset="0"
+         id="stop5381-1-6" />
+      <stop
+         id="stop5387-0-2"
+         offset="0.37456727"
+         style="stop-color:#0000ff;stop-opacity:1;" />
+      <stop
+         style="stop-color:#000080;stop-opacity:1;"
+         offset="1"
+         id="stop5383-8-6" />
+    </linearGradient>
+    <linearGradient
+       gradientTransform="translate(71.226139,-1034.0151)"
+       y2="5577.1323"
+       x2="848.52814"
+       y1="6425.6606"
+       x1="0"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient5413-2"
+       xlink:href="#linearGradient5379-5-3"
+       inkscape:collect="always" />
+    <linearGradient
+       id="linearGradient5379-5-3">
+      <stop
+         style="stop-color:#002680;stop-opacity:1;"
+         offset="0"
+         id="stop5381-1-0" />
+      <stop
+         id="stop5387-0-5"
+         offset="0.37456727"
+         style="stop-color:#004dff;stop-opacity:1;" />
+      <stop
+         style="stop-color:#002680;stop-opacity:1;"
+         offset="1"
+         id="stop5383-8-2" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient4790"
+       id="linearGradient4788"
+       x1="3600.0042"
+       y1="925.61206"
+       x2="4448.5283"
+       y2="77.088104"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient4790-7"
+       id="linearGradient4788-1"
+       x1="3600.0042"
+       y1="925.61206"
+       x2="4448.5283"
+       y2="77.088104"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       id="linearGradient4790-7">
+      <stop
+         id="stop4792-4"
+         offset="0"
+         style="stop-color:#000080;stop-opacity:1;" />
+      <stop
+         style="stop-color:#0000ff;stop-opacity:1;"
+         offset="0.37499312"
+         id="stop4794-0" />
+      <stop
+         id="stop4796-9"
+         offset="1"
+         style="stop-color:#000080;stop-opacity:1;" />
+    </linearGradient>
+    <linearGradient
+       gradientTransform="translate(1200,1.4930578e-5)"
+       y2="77.088104"
+       x2="4448.5283"
+       y1="925.61206"
+       x1="3600.0042"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient3085"
+       xlink:href="#linearGradient4790-7"
+       inkscape:collect="always" />
+    <linearGradient
+       gradientTransform="translate(1200,1.4930578e-5)"
+       y2="77.088104"
+       x2="4448.5283"
+       y1="925.61206"
+       x1="3600.0042"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient3085-5"
+       xlink:href="#linearGradient4790-7-5"
+       inkscape:collect="always" />
+    <linearGradient
+       id="linearGradient4790-7-5">
+      <stop
+         id="stop4792-4-1"
+         offset="0"
+         style="stop-color:#000080;stop-opacity:1;" />
+      <stop
+         style="stop-color:#0000ff;stop-opacity:1;"
+         offset="0.37499312"
+         id="stop4794-0-7" />
+      <stop
+         id="stop4796-9-1"
+         offset="1"
+         style="stop-color:#000080;stop-opacity:1;" />
+    </linearGradient>
+    <filter
+       inkscape:collect="always"
+       id="filter3927"
+       color-interpolation-filters="sRGB">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="29.698485"
+         id="feGaussianBlur3929" />
+    </filter>
+    <linearGradient
+       gradientTransform="translate(2471.2762,-1.9390536e-4)"
+       y2="77.088104"
+       x2="4448.5283"
+       y1="925.61206"
+       x1="3600.0042"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient3085-1"
+       xlink:href="#linearGradient4790-7-4"
+       inkscape:collect="always" />
+    <linearGradient
+       id="linearGradient4790-7-4">
+      <stop
+         id="stop4792-4-2"
+         offset="0"
+         style="stop-color:#002680;stop-opacity:1;" />
+      <stop
+         style="stop-color:#004dff;stop-opacity:1;"
+         offset="0.37499312"
+         id="stop4794-0-3" />
+      <stop
+         id="stop4796-9-2"
+         offset="1"
+         style="stop-color:#002680;stop-opacity:1;" />
+    </linearGradient>
+    <filter
+       color-interpolation-filters="sRGB"
+       inkscape:collect="always"
+       id="filter3927-2">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="29.698485"
+         id="feGaussianBlur3929-1" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter3852"
+       x="-0.1145395"
+       width="1.229079"
+       y="-0.066317786"
+       height="1.1326356">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="24.876739"
+         id="feGaussianBlur3854" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter3845"
+       x="-0.1145395"
+       width="1.229079"
+       y="-0.066317786"
+       height="1.1326356">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="24.876739"
+         id="feGaussianBlur3847" />
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#6f6f6f"
+     bordercolor="#ffffff"
+     borderopacity="0.0"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="0"
+     inkscape:zoom="0.35355339"
+     inkscape:cx="5457.3869"
+     inkscape:cy="307.30396"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     showborder="false"
+     inkscape:showpageshadow="false"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:window-width="1920"
+     inkscape:window-height="1115"
+     inkscape:window-x="-4"
+     inkscape:window-y="-4"
+     inkscape:window-maximized="1"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0" />
+  <metadata
+     id="metadata4718">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,97.202077)">
+    <g
+       transform="translate(2471.2762,-1.9390536e-4)"
+       id="g4777-8-5-5"
+       style="stroke:#000000;filter:url(#filter3845)"
+       inkscape:export-filename="C:\Dropbox\leftium_logo\leftium_le_cmyk.png"
+       inkscape:export-xdpi="52.936974"
+       inkscape:export-ydpi="52.936974">
+      <path
+         inkscape:connector-curvature="0"
+         id="path5229-9-5-3-8-2-7"
+         d="m 4342.4591,77.08824 -424.264,424.264 424.2641,424.26414"
+         style="fill:none;stroke:#000000;stroke-width:150;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <path
+         sodipodi:end="3.2288591"
+         sodipodi:start="1.5829398"
+         transform="matrix(0.26944986,0.26944986,-0.26944986,0.26944986,4818.6833,723.97264)"
+         d="m -907.9632,1848.359 c -217.3849,-2.6399 -391.47,-181.0053 -388.8301,-398.3901 0.1197,-9.8576 0.6097,-19.7071 1.4689,-29.5279"
+         sodipodi:ry="393.63916"
+         sodipodi:rx="393.63916"
+         sodipodi:cy="1454.7489"
+         sodipodi:cx="-903.18317"
+         id="path5233-0-2-5-6-2-7-6"
+         style="fill:none;stroke:#000000;stroke-width:393.63916016;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         sodipodi:type="arc"
+         sodipodi:open="true" />
+      <path
+         sodipodi:open="true"
+         sodipodi:end="6.3704518"
+         sodipodi:start="3.0543262"
+         transform="matrix(0.26944986,0.26944986,-0.26944986,0.26944986,4924.7901,617.87856)"
+         d="m -1295.3244,1489.0568 c -18.9477,-216.5736 141.2597,-407.5014 357.83332,-426.4491 216.57363,-18.9478 407.50142,141.2597 426.44916,357.8333 1.99722,22.8283 1.99722,45.7875 0,68.6158"
+         sodipodi:ry="393.63916"
+         sodipodi:rx="393.63916"
+         sodipodi:cy="1454.7489"
+         sodipodi:cx="-903.18317"
+         id="path5233-0-6-0-4-6-1"
+         style="fill:none;stroke:#000000;stroke-width:393.63916016;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         sodipodi:type="arc" />
+    </g>
+    <rect
+       y="77.087906"
+       x="6071.2764"
+       height="848.52814"
+       width="848.52814"
+       id="rect5345-7-4-1-8"
+       style="fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:0;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;filter:url(#filter3927-2)"
+       inkscape:export-filename="C:\Dropbox\leftium_logo\leftium_le_cmyk.png"
+       inkscape:export-xdpi="52.936974"
+       inkscape:export-ydpi="52.936974" />
+    <rect
+       y="77.087906"
+       x="6071.2764"
+       height="848.52814"
+       width="848.52814"
+       id="rect5345-7-4-9"
+       style="fill:url(#linearGradient3085-1);fill-opacity:1;stroke:#ffffff;stroke-width:0;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       inkscape:export-filename="C:\Dropbox\leftium_logo\leftium_le_cmyk.png"
+       inkscape:export-xdpi="52.936974"
+       inkscape:export-ydpi="52.936974" />
+    <g
+       transform="translate(2471.2762,-1.9390536e-4)"
+       id="g4777-8-2"
+       inkscape:export-filename="C:\Dropbox\leftium_logo\leftium_le_cmyk.png"
+       inkscape:export-xdpi="52.936974"
+       inkscape:export-ydpi="52.936974">
+      <path
+         inkscape:connector-curvature="0"
+         id="path5229-9-5-3-8-7"
+         d="m 4342.4591,77.08824 -424.264,424.264 424.2641,424.26414"
+         style="fill:none;stroke:#ffffff;stroke-width:150;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <path
+         sodipodi:end="3.2288591"
+         sodipodi:start="1.5829398"
+         transform="matrix(0.26944986,0.26944986,-0.26944986,0.26944986,4818.6833,723.97264)"
+         d="m -907.9632,1848.359 c -217.3849,-2.6399 -391.47,-181.0053 -388.8301,-398.3901 0.1197,-9.8576 0.6097,-19.7071 1.4689,-29.5279"
+         sodipodi:ry="393.63916"
+         sodipodi:rx="393.63916"
+         sodipodi:cy="1454.7489"
+         sodipodi:cx="-903.18317"
+         id="path5233-0-2-5-6-2-9"
+         style="fill:none;stroke:#ffffff;stroke-width:393.63916016;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         sodipodi:type="arc"
+         sodipodi:open="true" />
+      <path
+         sodipodi:open="true"
+         sodipodi:end="6.3704518"
+         sodipodi:start="3.0543262"
+         transform="matrix(0.26944986,0.26944986,-0.26944986,0.26944986,4924.7901,617.87856)"
+         d="m -1295.3244,1489.0568 c -18.9477,-216.5736 141.2597,-407.5014 357.83332,-426.4491 216.57363,-18.9478 407.50142,141.2597 426.44916,357.8333 1.99722,22.8283 1.99722,45.7875 0,68.6158"
+         sodipodi:ry="393.63916"
+         sodipodi:rx="393.63916"
+         sodipodi:cy="1454.7489"
+         sodipodi:cx="-903.18317"
+         id="path5233-0-6-0-4-5"
+         style="fill:none;stroke:#ffffff;stroke-width:393.63916016;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         sodipodi:type="arc" />
+    </g>
+    <g
+       transform="translate(1200,1.4930578e-5)"
+       id="g4777-8-5"
+       style="stroke:#000000;filter:url(#filter3852)"
+       inkscape:export-filename="C:\Dropbox\leftium_logo\leftium_le.png"
+       inkscape:export-xdpi="51.632767"
+       inkscape:export-ydpi="51.632767">
+      <path
+         inkscape:connector-curvature="0"
+         id="path5229-9-5-3-8-2"
+         d="m 4342.4591,77.08824 -424.264,424.264 424.2641,424.26414"
+         style="fill:none;stroke:#000000;stroke-width:150;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <path
+         sodipodi:end="3.2288591"
+         sodipodi:start="1.5829398"
+         transform="matrix(0.26944986,0.26944986,-0.26944986,0.26944986,4818.6833,723.97264)"
+         d="m -907.9632,1848.359 c -217.3849,-2.6399 -391.47,-181.0053 -388.8301,-398.3901 0.1197,-9.8576 0.6097,-19.7071 1.4689,-29.5279"
+         sodipodi:ry="393.63916"
+         sodipodi:rx="393.63916"
+         sodipodi:cy="1454.7489"
+         sodipodi:cx="-903.18317"
+         id="path5233-0-2-5-6-2-7"
+         style="fill:none;stroke:#000000;stroke-width:393.63916016;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         sodipodi:type="arc"
+         sodipodi:open="true" />
+      <path
+         sodipodi:open="true"
+         sodipodi:end="6.3704518"
+         sodipodi:start="3.0543262"
+         transform="matrix(0.26944986,0.26944986,-0.26944986,0.26944986,4924.7901,617.87856)"
+         d="m -1295.3244,1489.0568 c -18.9477,-216.5736 141.2597,-407.5014 357.83332,-426.4491 216.57363,-18.9478 407.50142,141.2597 426.44916,357.8333 1.99722,22.8283 1.99722,45.7875 0,68.6158"
+         sodipodi:ry="393.63916"
+         sodipodi:rx="393.63916"
+         sodipodi:cy="1454.7489"
+         sodipodi:cx="-903.18317"
+         id="path5233-0-6-0-4-6"
+         style="fill:none;stroke:#000000;stroke-width:393.63916016;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         sodipodi:type="arc" />
+    </g>
+    <rect
+       y="77.088135"
+       x="4800"
+       height="848.52814"
+       width="848.52814"
+       id="rect5345-7-4-1"
+       style="fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:0;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;filter:url(#filter3927)"
+       inkscape:export-filename="C:\Dropbox\leftium_logo\leftium_le.png"
+       inkscape:export-xdpi="51.632767"
+       inkscape:export-ydpi="51.632767" />
+    <rect
+       y="77.088135"
+       x="4800"
+       height="848.52814"
+       width="848.52814"
+       id="rect5345-7-4"
+       style="fill:url(#linearGradient3085);fill-opacity:1;stroke:#ffffff;stroke-width:0;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       inkscape:export-filename="C:\Dropbox\leftium_logo\leftium_le.png"
+       inkscape:export-xdpi="51.632767"
+       inkscape:export-ydpi="51.632767" />
+    <rect
+       style="fill:#0000ff;stroke:#ffffff;stroke-width:0;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect5345"
+       width="848.52814"
+       height="848.52814"
+       x="2400"
+       y="77.201073" />
+    <path
+       style="fill:none;stroke:#ffffff;stroke-width:150;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="m 75,377.36218 0,600 600,0"
+       id="path5229"
+       inkscape:connector-curvature="0" />
+    <path
+       sodipodi:type="arc"
+       style="fill:none;stroke:#ffffff;stroke-width:393.63916016;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="path5233"
+       sodipodi:cx="-903.18317"
+       sodipodi:cy="1454.7489"
+       sodipodi:rx="393.63916"
+       sodipodi:ry="393.63916"
+       d="m -509.54401,1454.7489 c 0,217.4009 -176.23825,393.6392 -393.63916,393.6392 -217.40093,0 -393.63913,-176.2383 -393.63913,-393.6392 0,-217.4009 176.2382,-393.6392 393.63913,-393.6392 217.40091,0 393.63916,176.2383 393.63916,393.6392 z"
+       transform="matrix(0.38105965,0,0,0.38105965,869.16666,-26.983927)" />
+    <g
+       id="g4683">
+      <path
+         inkscape:connector-curvature="0"
+         id="path5229-9"
+         d="m 1275,152.34107 0,599.9999 600,0"
+         style="fill:none;stroke:#ffffff;stroke-width:150;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <path
+         sodipodi:open="true"
+         sodipodi:end="3.2288591"
+         sodipodi:start="1.5707963"
+         transform="matrix(0.38105965,0,0,0.38105965,2069.1577,273.01607)"
+         d="m -903.18316,1848.3881 c -217.40094,0 -393.63914,-176.2383 -393.63914,-393.6392 0,-11.4523 0.4998,-22.8992 1.4979,-34.3079"
+         sodipodi:ry="393.63916"
+         sodipodi:rx="393.63916"
+         sodipodi:cy="1454.7489"
+         sodipodi:cx="-903.18317"
+         id="path5233-0-2"
+         style="fill:none;stroke:#ffffff;stroke-width:393.63916016;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         sodipodi:type="arc" />
+      <path
+         sodipodi:open="true"
+         sodipodi:end="6.3704518"
+         sodipodi:start="3.0543262"
+         transform="matrix(0.38105965,0,0,0.38105965,2069.1667,122.96737)"
+         d="m -1295.3244,1489.0568 c -18.9477,-216.5736 141.2597,-407.5014 357.83332,-426.4491 216.57363,-18.9478 407.50142,141.2597 426.44916,357.8333 1.99722,22.8283 1.99722,45.7875 0,68.6158"
+         sodipodi:ry="393.63916"
+         sodipodi:rx="393.63916"
+         sodipodi:cy="1454.7489"
+         sodipodi:cx="-903.18317"
+         id="path5233-0"
+         style="fill:none;stroke:#ffffff;stroke-width:393.63916016;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         sodipodi:type="arc" />
+    </g>
+    <g
+       id="g4772">
+      <path
+         inkscape:connector-curvature="0"
+         id="path5229-9-5"
+         d="m 3142.4592,77.201278 -424.264,424.264002 424.2641,424.26406"
+         style="fill:none;stroke:#ffffff;stroke-width:150;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <path
+         sodipodi:end="3.2288591"
+         sodipodi:start="1.5829398"
+         transform="matrix(0.26944986,0.26944986,-0.26944986,0.26944986,3618.6834,724.08568)"
+         d="m -907.9632,1848.359 c -217.3849,-2.6399 -391.47,-181.0053 -388.8301,-398.3901 0.1197,-9.8576 0.6097,-19.7071 1.4689,-29.5279"
+         sodipodi:ry="393.63916"
+         sodipodi:rx="393.63916"
+         sodipodi:cy="1454.7489"
+         sodipodi:cx="-903.18317"
+         id="path5233-0-2-5"
+         style="fill:none;stroke:#ffffff;stroke-width:393.63916016;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         sodipodi:type="arc"
+         sodipodi:open="true" />
+      <path
+         sodipodi:open="true"
+         sodipodi:end="6.3704518"
+         sodipodi:start="3.0543262"
+         transform="matrix(0.26944986,0.26944986,-0.26944986,0.26944986,3724.7902,617.99159)"
+         d="m -1295.3244,1489.0568 c -18.9477,-216.5736 141.2597,-407.5014 357.83332,-426.4491 216.57363,-18.9478 407.50142,141.2597 426.44916,357.8333 1.99722,22.8283 1.99722,45.7875 0,68.6158"
+         sodipodi:ry="393.63916"
+         sodipodi:rx="393.63916"
+         sodipodi:cy="1454.7489"
+         sodipodi:cx="-903.18317"
+         id="path5233-0-6"
+         style="fill:none;stroke:#ffffff;stroke-width:393.63916016;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         sodipodi:type="arc" />
+    </g>
+    <rect
+       y="77.088104"
+       x="3600"
+       height="848.52814"
+       width="848.52814"
+       id="rect5345-7"
+       style="fill:url(#linearGradient4788);fill-opacity:1;stroke:#ffffff;stroke-width:0;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <g
+       id="g4777">
+      <path
+         inkscape:connector-curvature="0"
+         id="path5229-9-5-3"
+         d="m 4342.4591,77.08824 -424.264,424.264 424.2641,424.26414"
+         style="fill:none;stroke:#ffffff;stroke-width:150;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <path
+         sodipodi:end="3.2288591"
+         sodipodi:start="1.5829398"
+         transform="matrix(0.26944986,0.26944986,-0.26944986,0.26944986,4818.6833,723.97264)"
+         d="m -907.9632,1848.359 c -217.3849,-2.6399 -391.47,-181.0053 -388.8301,-398.3901 0.1197,-9.8576 0.6097,-19.7071 1.4689,-29.5279"
+         sodipodi:ry="393.63916"
+         sodipodi:rx="393.63916"
+         sodipodi:cy="1454.7489"
+         sodipodi:cx="-903.18317"
+         id="path5233-0-2-5-6"
+         style="fill:none;stroke:#ffffff;stroke-width:393.63916016;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         sodipodi:type="arc"
+         sodipodi:open="true" />
+      <path
+         sodipodi:open="true"
+         sodipodi:end="6.3704518"
+         sodipodi:start="3.0543262"
+         transform="matrix(0.26944986,0.26944986,-0.26944986,0.26944986,4924.7901,617.87856)"
+         d="m -1295.3244,1489.0568 c -18.9477,-216.5736 141.2597,-407.5014 357.83332,-426.4491 216.57363,-18.9478 407.50142,141.2597 426.44916,357.8333 1.99722,22.8283 1.99722,45.7875 0,68.6158"
+         sodipodi:ry="393.63916"
+         sodipodi:rx="393.63916"
+         sodipodi:cy="1454.7489"
+         sodipodi:cx="-903.18317"
+         id="path5233-0-6-0"
+         style="fill:none;stroke:#ffffff;stroke-width:393.63916016;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         sodipodi:type="arc" />
+    </g>
+    <g
+       transform="translate(1200,1.4930578e-5)"
+       id="g4777-8"
+       inkscape:export-filename="C:\Dropbox\leftium_logo\leftium_le.png"
+       inkscape:export-xdpi="51.632767"
+       inkscape:export-ydpi="51.632767">
+      <path
+         inkscape:connector-curvature="0"
+         id="path5229-9-5-3-8"
+         d="m 4342.4591,77.08824 -424.264,424.264 424.2641,424.26414"
+         style="fill:none;stroke:#ffffff;stroke-width:150;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <path
+         sodipodi:end="3.2288591"
+         sodipodi:start="1.5829398"
+         transform="matrix(0.26944986,0.26944986,-0.26944986,0.26944986,4818.6833,723.97264)"
+         d="m -907.9632,1848.359 c -217.3849,-2.6399 -391.47,-181.0053 -388.8301,-398.3901 0.1197,-9.8576 0.6097,-19.7071 1.4689,-29.5279"
+         sodipodi:ry="393.63916"
+         sodipodi:rx="393.63916"
+         sodipodi:cy="1454.7489"
+         sodipodi:cx="-903.18317"
+         id="path5233-0-2-5-6-2"
+         style="fill:none;stroke:#ffffff;stroke-width:393.63916016;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         sodipodi:type="arc"
+         sodipodi:open="true" />
+      <path
+         sodipodi:open="true"
+         sodipodi:end="6.3704518"
+         sodipodi:start="3.0543262"
+         transform="matrix(0.26944986,0.26944986,-0.26944986,0.26944986,4924.7901,617.87856)"
+         d="m -1295.3244,1489.0568 c -18.9477,-216.5736 141.2597,-407.5014 357.83332,-426.4491 216.57363,-18.9478 407.50142,141.2597 426.44916,357.8333 1.99722,22.8283 1.99722,45.7875 0,68.6158"
+         sodipodi:ry="393.63916"
+         sodipodi:rx="393.63916"
+         sodipodi:cy="1454.7489"
+         sodipodi:cx="-903.18317"
+         id="path5233-0-6-0-4"
+         style="fill:none;stroke:#ffffff;stroke-width:393.63916016;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+         sodipodi:type="arc" />
+    </g>
+    <rect
+       style="fill:none;stroke:#808080;stroke-width:0.99900001;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect3856"
+       width="1149.001"
+       height="1149.001"
+       x="4649.7637"
+       y="-73.148285"
+       inkscape:export-filename="C:\Dropbox\leftium_logo\images\leftium_le_600.png"
+       inkscape:export-xdpi="47.113041"
+       inkscape:export-ydpi="47.113041" />
+    <rect
+       style="fill:none;stroke:#808080;stroke-width:0.99900001;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect3856-9"
+       width="1149.001"
+       height="1149.001"
+       x="5921.04"
+       y="-73.148514"
+       inkscape:export-filename="C:\Dropbox\leftium_logo\images\leftium_le_600_cmyk.png"
+       inkscape:export-xdpi="47.113041"
+       inkscape:export-ydpi="47.113041" />
+  </g>
+</svg>
