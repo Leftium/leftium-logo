@@ -268,10 +268,10 @@
     <filter
        inkscape:collect="always"
        id="filter3845"
-       x="-0.1145395"
-       width="1.229079"
-       y="-0.066317786"
-       height="1.1326356">
+       x="-0.3145395"
+       width="1.629079"
+       y="-0.266317786"
+       height="1.5326356">
       <feGaussianBlur
          inkscape:collect="always"
          stdDeviation="24.876739"
