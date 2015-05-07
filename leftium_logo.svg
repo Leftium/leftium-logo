@@ -255,18 +255,6 @@
     </filter>
     <filter
        inkscape:collect="always"
-       id="filter3852"
-       x="-0.1145395"
-       width="1.229079"
-       y="-0.066317786"
-       height="1.1326356">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="24.876739"
-         id="feGaussianBlur3854" />
-    </filter>
-    <filter
-       inkscape:collect="always"
        id="filter3845"
        x="-0.3145395"
        width="1.629079"
@@ -421,7 +409,7 @@
     <g
        transform="translate(1200,1.4930578e-5)"
        id="g4777-8-5"
-       style="stroke:#000000;filter:url(#filter3852)"
+       style="stroke:#000000;filter:url(#filter3845)"
        inkscape:export-filename="C:\Dropbox\leftium_logo\leftium_le.png"
        inkscape:export-xdpi="51.632767"
        inkscape:export-ydpi="51.632767">
