@@ -213,7 +213,8 @@
     <filter
        inkscape:collect="always"
        id="filter3927"
-       color-interpolation-filters="sRGB">
+       color-interpolation-filters="sRGB"
+       inkscape:label="white-highlight">
       <feGaussianBlur
          inkscape:collect="always"
          stdDeviation="29.698485"
@@ -245,21 +246,13 @@
          style="stop-color:#002680;stop-opacity:1;" />
     </linearGradient>
     <filter
-       color-interpolation-filters="sRGB"
-       inkscape:collect="always"
-       id="filter3927-2">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="29.698485"
-         id="feGaussianBlur3929-1" />
-    </filter>
-    <filter
        inkscape:collect="always"
        id="filter3845"
        x="-0.3145395"
        width="1.629079"
        y="-0.266317786"
-       height="1.5326356">
+       height="1.5326356"
+       inkscape:label="dark-shadow">
       <feGaussianBlur
          inkscape:collect="always"
          stdDeviation="24.876739"
@@ -354,7 +347,7 @@
        height="848.52814"
        width="848.52814"
        id="rect5345-7-4-1-8"
-       style="fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:0;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;filter:url(#filter3927-2)"
+       style="fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:0;stroke-linecap:butt;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;filter:url(#filter3927)"
        inkscape:export-filename="C:\Dropbox\leftium_logo\leftium_le_cmyk.png"
        inkscape:export-xdpi="52.936974"
        inkscape:export-ydpi="52.936974" />
