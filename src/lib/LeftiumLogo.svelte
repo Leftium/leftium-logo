@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Attachment } from 'svelte/attachments';
-	import { Ripples, type RipplesOptions } from '$lib/webgl-ripples';
+	import { Ripples, type RipplesOptions } from '$lib/webgl-ripples/webgl-ripples.js';
 
 	import logoGlow from '$lib/assets/logo-layers/glow.webp';
 	import logoLigature from '$lib/assets/logo-layers/ligature.webp';

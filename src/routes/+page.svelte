@@ -1,5 +1,5 @@
 <script lang="ts">
-	import LeftiumLogo from './LeftiumLogo.svelte';
+	import LeftiumLogo from '$lib/LeftiumLogo.svelte';
 </script>
 
 <center>
