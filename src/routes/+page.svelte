@@ -4,7 +4,7 @@
 
 <center>
 	<LeftiumLogo></LeftiumLogo>
-	View the <a href="https://github.com/Leftium/leftium.github.io">source code</a>!
+	View the <a href="https://github.com/Leftium/leftium-logo">source code</a>!
 </center>
 
 <style>
