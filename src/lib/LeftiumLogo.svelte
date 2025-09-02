@@ -303,7 +303,7 @@
 	/* Square image - base element at 532x532 */
 	.ripples.square {
 		width: 100%;
-		height: 100%;
+		aspect-ratio: 1;
 		background-size: contain;
 		background-position: center;
 		background-repeat: no-repeat;
