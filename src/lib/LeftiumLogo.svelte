@@ -34,10 +34,18 @@
 	const logoAnimation: Attachment = (element) => {
 		animatedElements = [...element.children].filter((child) => child.classList.contains('animate'));
 		const ripplesElement = element.getElementsByClassName('ripples')[0] as HTMLElement | undefined;
-		const resolution = !ripplesElement ? 512 : Math.min(512, ripplesElement.offsetWidth / 2); // Apply ripples to the container but confine them to the content area
+
+		// Higher resolution for smaller sizes to avoid blurriness
+		// For small logos, use closer to 1:1 ratio, for large logos cap at 512
+		const elementSize = ripplesElement?.offsetWidth || 100;
+		const resolution = !ripplesElement ? 512 : Math.min(512, Math.max(128, elementSize * 0.8));
+
+		// Scale drop radius based on element size - smaller drops for smaller logos
+		const scaledDropRadius = Math.max(10, Math.min(30, elementSize / 10)); // Range from 10-30px
+
 		const DEFAULT_RIPPLES_OPTIONS = {
 			resolution,
-			dropRadius: 20,
+			dropRadius: scaledDropRadius,
 			perturbance: 0.01
 		};
 		const rippleOptions = { ...DEFAULT_RIPPLES_OPTIONS, ...ripplesOptionsProp };
@@ -81,10 +89,13 @@
 							// Wait a frame before creating new instance to ensure cleanup
 							requestAnimationFrame(() => {
 								if (!ripples && animated && ripplesElement) {
-									const newResolution = Math.min(512, currentWidth / 2);
+									// Higher resolution for smaller sizes to avoid blurriness
+									const newResolution = Math.min(512, Math.max(128, currentWidth * 0.8));
+									const scaledDropRadius = Math.max(10, Math.min(30, currentWidth / 10));
 									const newRippleOptions = {
 										...rippleOptions,
-										resolution: newResolution
+										resolution: newResolution,
+										dropRadius: scaledDropRadius
 									};
 
 									try {
@@ -128,7 +139,9 @@
 					lastDropTime = time;
 					const x = Math.random() * ripplesElement.offsetWidth;
 					const y = Math.random() * ripplesElement.offsetHeight;
-					const strength = 0.1 + Math.random() * 0.04;
+					// Scale strength based on size - gentler ripples for smaller logos
+					const sizeFactor = Math.min(1, ripplesElement.offsetWidth / 200);
+					const strength = (0.1 + Math.random() * 0.04) * sizeFactor;
 					ripples.drop(x, y, rippleOptions.dropRadius, strength);
 				}
 			}
