@@ -2,23 +2,25 @@
 	import type { Attachment } from 'svelte/attachments';
 	import { Ripples, type RipplesOptions } from '$lib/webgl-ripples/webgl-ripples.js';
 
-	import logoGlow from '$lib/assets/logo-layers/glow.webp';
-	import logoLigature from '$lib/assets/logo-layers/ligature.webp';
-	import logoShadow from '$lib/assets/logo-layers/shadow.webp';
-	import logoSquare from '$lib/assets/logo-layers/square.webp';
+	import logoGlow from '$lib/assets/logo-parts/glow.webp';
+	import logoLigature from '$lib/assets/logo-parts/ligature.webp';
+	import logoShadow from '$lib/assets/logo-parts/shadow.webp';
+	import logoSquare from '$lib/assets/logo-parts/square.webp';
 
 	interface Props {
 		size?: string;
 		animated?: boolean;
 		toggleAnimationWithShift?: boolean;
 		ripplesOptions?: RipplesOptions;
+		boundingBox?: 'square' | 'encircled';
 	}
 
 	let {
 		size = '100%',
 		animated = true,
 		toggleAnimationWithShift = false,
-		ripplesOptions: ripplesOptionsProp = {}
+		ripplesOptions: ripplesOptionsProp = {},
+		boundingBox = 'encircled'
 	}: Props = $props();
 
 	let ripples: Ripples | null;
@@ -32,15 +34,7 @@
 		const DEFAULT_RIPPLES_OPTIONS = {
 			resolution,
 			dropRadius: 20,
-			perturbance: 0.01,
-			// contentBounds tells the library where the actual content is
-			// (in case of image with transparent margins)
-			contentBounds: {
-				x: 14.5,
-				y: 17,
-				width: 66.5,
-				height: 66
-			}
+			perturbance: 0.01
 		};
 		const rippleOptions = { ...DEFAULT_RIPPLES_OPTIONS, ...ripplesOptionsProp };
 
@@ -125,8 +119,25 @@
 			const dx = animated ? ((origX + origY) * Math.sqrt(2)) / 2 : 0;
 			const dy = animated ? ((-origX + origY) * Math.sqrt(2)) / 2 : 0;
 
+			// The animation percentages were designed for the full 800px canvas
+			// Now we need to scale them for each element's actual size
 			for (const el of animatedElements) {
-				(el as HTMLElement).style.transform = `translate(${dx}%, ${dy}%)`;
+				if (el.classList.contains('shadow')) {
+					// Shadow is 540x766, need to scale movement to match original animation
+					// Original: 4% of 800px = 32px. For shadow: 32px / 540px = 5.93%
+					const scaleX = 800 / 540;
+					const scaleY = 800 / 766;
+					(el as HTMLElement).style.transform = `translate(${dx * scaleX}%, ${dy * scaleY}%)`;
+				} else if (el.classList.contains('ligature')) {
+					// Ligature is 440x666, need to scale movement to match original animation
+					// Original: 4% of 800px = 32px. For ligature: 32px / 440px = 7.27%
+					const scaleX = 800 / 440;
+					const scaleY = 800 / 666;
+					(el as HTMLElement).style.transform = `translate(${dx * scaleX}%, ${dy * scaleY}%)`;
+				} else {
+					// Default for any other animated elements
+					(el as HTMLElement).style.transform = `translate(${dx}%, ${dy}%)`;
+				}
 			}
 
 			// Only continue animation if animated
@@ -150,7 +161,12 @@
 		};
 	};
 
-	function onclick(event: MouseEvent) {
+	function handleClick(event: MouseEvent | KeyboardEvent) {
+		// For keyboard events, only respond to Enter key
+		if ('key' in event && event.key !== 'Enter') {
+			return;
+		}
+
 		// Shift key controls whether click drops or toggles animation.
 		if (toggleAnimationWithShift !== event.shiftKey) {
 			return;
@@ -183,45 +199,129 @@
 	}
 </script>
 
-<grid-logo {@attach logoAnimation} style:--size={size} {onclick} role="none">
-	<img src={logoShadow} class="animate" alt="" />
-	<img src={logoGlow} alt="" />
-	<div class="ripples" style:background-image="url({logoSquare})"></div>
-	<img src={logoLigature} class="animate no-pointer" alt="" />
-</grid-logo>
+<logo-container style:--size={size} class={boundingBox} role="none">
+	<grid-logo {@attach logoAnimation}>
+		<img src={logoShadow} class="animate shadow" alt="" />
+		<img src={logoGlow} class="glow" alt="" />
+		<div
+			class="ripples square"
+			style:background-image="url({logoSquare})"
+			onclick={handleClick}
+			onkeydown={handleClick}
+			role="button"
+			tabindex="0"
+			aria-label="Toggle logo animation"
+		></div>
+		<img src={logoLigature} class="animate ligature" alt="" />
+	</grid-logo>
+</logo-container>
 
 <style>
-	grid-logo {
-		display: grid;
-		place-items: center;
-		width: var(--size);
-		height: var(--size);
-		contain: layout style paint;
+	/* Container that defines the bounding box */
+	logo-container {
+		display: inline-block;
+		position: relative;
 		user-select: none;
 		-webkit-user-select: none;
 		-moz-user-select: none;
 		-ms-user-select: none;
+		overflow: visible;
+	}
 
-		* {
-			width: 100%;
-			height: 100%;
-			grid-column: 1 / 2;
-			grid-row: 1 / 2;
-			/* Ensure all grid siblings share same stacking context;
-               otherwise shadow is rendered above square. */
-			z-index: 0;
-			will-change: auto;
-		}
+	/* Square bounding box mode - size matches the square */
+	logo-container.square {
+		width: var(--size);
+		height: var(--size);
+	}
 
-		div {
-			position: relative;
-			background-size: 100% 100%;
-			background-position: center;
-			background-repeat: no-repeat;
-		}
+	/* Encircled bounding box mode - size for full logo with padding */
+	logo-container.encircled {
+		width: calc(var(--size) * 1.5037); /* 800/532 ratio */
+		height: calc(var(--size) * 1.5037);
+	}
 
-		.no-pointer {
-			pointer-events: none;
-		}
+	/* Grid that holds all the logo elements */
+	grid-logo {
+		position: absolute;
+		display: grid;
+		place-items: center;
+		/* Always size based on the square dimensions */
+		width: var(--size);
+		height: var(--size);
+	}
+
+	/* Position grid differently based on bounding box mode */
+	.square grid-logo {
+		left: 0;
+		top: 0;
+	}
+
+	.encircled grid-logo {
+		/* Center the square within the encircled bounds */
+		/* (800 - 532) / 2 = 134px offset at 800px scale */
+		left: calc(var(--size) * 0.2518); /* 134/532 ratio */
+		top: calc(var(--size) * 0.2518);
+	}
+
+	/* Individual logo elements positioned relative to the square */
+	grid-logo > * {
+		position: absolute;
+		grid-column: 1 / 2;
+		grid-row: 1 / 2;
+		will-change: auto;
+	}
+
+	/* Square - base element at 532x532 */
+	.square {
+		width: 100%;
+		height: 100%;
+		background-size: contain;
+		background-position: center;
+		background-repeat: no-repeat;
+		z-index: 2;
+		cursor: pointer;
+		outline: none;
+	}
+
+	.square:focus {
+		outline: none;
+	}
+
+	/* Glow - 647x647, centered on square */
+	.glow {
+		width: calc(100% * 647 / 532);
+		height: calc(100% * 647 / 532);
+		/* Center it: (647-532)/2 = 57.5px offset at original scale */
+		left: calc(100% * -57.5 / 532);
+		top: calc(100% * -57.5 / 532);
+		z-index: 1;
+		/* Glow should not capture clicks */
+		pointer-events: none;
+	}
+
+	/* Shadow - 540x766, positioned to outline the ligature */
+	.shadow {
+		width: calc(100% * 540 / 532);
+		height: calc(100% * 766 / 532);
+		/* Shadow should be centered on ligature */
+		/* Ligature is 440x666, shadow is 540x766 */
+		/* Shadow is (540-440)/2 = 50px wider on each side, (766-666)/2 = 50px taller on each side */
+		left: calc(100% * (133 - 50) / 532); /* Center shadow on ligature */
+		top: calc(100% * (-66 - 50) / 532);
+		z-index: 0;
+		/* Shadow should not capture clicks */
+		pointer-events: none;
+	}
+
+	/* Ligature - 440x666, positioned based on SVG */
+	.ligature {
+		width: calc(100% * 440 / 532);
+		height: calc(100% * 666 / 532);
+		/* Ligature extends to the right and below the square */
+		/* Looking at the SVG path, the ligature starts at top-left and extends right and down */
+		left: calc(100% * 134 / 532);
+		top: calc(100% * -65 / 532);
+		z-index: 3;
+		pointer-events: none;
 	}
 </style>
