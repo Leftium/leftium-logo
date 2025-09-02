@@ -15,7 +15,7 @@
 	}
 
 	let {
-		size = 'calc(min(90svh, 90svw))',
+		size = '100%',
 		animated = true,
 		toggleAnimationWithShift = false,
 		ripplesOptions: ripplesOptionsProp = {}

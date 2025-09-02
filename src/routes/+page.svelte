@@ -3,7 +3,7 @@
 </script>
 
 <center>
-	<LeftiumLogo></LeftiumLogo>
+	<LeftiumLogo size='calc(min(90svh, 90svw))'></LeftiumLogo>
 	View the <a href="https://github.com/Leftium/leftium-logo">source code</a>!
 </center>
 
