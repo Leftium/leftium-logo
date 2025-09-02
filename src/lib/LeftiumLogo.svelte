@@ -229,8 +229,8 @@
 
 <logo-container style:--size={size} class={boundingBox} role="none">
 	<grid-logo {@attach logoAnimation}>
-		<img src={logoShadow} class="animate shadow" alt="" />
-		<img src={logoGlow} class="glow" alt="" />
+		<img class="animate shadow" alt="" src={logoShadow} />
+		<img class="glow" alt="" src={logoGlow} />
 		<div
 			class="ripples square"
 			style:background-image="url({logoSquare})"
@@ -240,7 +240,7 @@
 			tabindex="0"
 			aria-label="Toggle logo animation"
 		></div>
-		<img src={logoLigature} class="animate ligature" alt="" />
+		<img class="animate ligature" alt="" src={logoLigature} />
 	</grid-logo>
 </logo-container>
 
