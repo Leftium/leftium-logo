@@ -13,6 +13,8 @@
 		toggleAnimationWithShift?: boolean;
 		ripplesOptions?: RipplesOptions;
 		boundingBox?: 'square' | 'default' | 'encircled';
+		class?: string;
+		[key: string]: any; // Allow any additional props
 	}
 
 	let {
@@ -20,7 +22,9 @@
 		animated = true,
 		toggleAnimationWithShift = false,
 		ripplesOptions: ripplesOptionsProp = {},
-		boundingBox = 'default'
+		boundingBox = 'default',
+		class: className = '',
+		...restProps
 	}: Props = $props();
 
 	let ripples: Ripples | null;
@@ -227,7 +231,7 @@
 	}
 </script>
 
-<logo-container style:--size={size} class={boundingBox} role="none">
+<logo-container style:--size={size} class="{boundingBox} {className}" role="none" {...restProps}>
 	<grid-logo {@attach logoAnimation}>
 		<img class="animate shadow" alt="" src={logoShadow} />
 		<img class="glow" alt="" src={logoGlow} />
