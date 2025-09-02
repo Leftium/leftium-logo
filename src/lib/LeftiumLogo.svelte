@@ -265,6 +265,11 @@
 		place-items: center;
 		width: 100%; /* Default width, will be overridden for default/encircled modes */
 		aspect-ratio: 1;
+
+		img {
+			/* Prevent PicoCSS styles. */
+			max-width: unset !important;
+		}
 	}
 
 	/* Square bounding box mode - grid fills the container */
@@ -312,6 +317,7 @@
 		outline: none;
 
 		/* Prevent PicoCSS [role=button] styles. */
+		padding: 0 !important;
 		border: none !important;
 		border-radius: 0 !important;
 		outline: none !important;
