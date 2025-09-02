@@ -42,35 +42,56 @@
 		let resizeObserver: ResizeObserver | null = null;
 		let lastWidth = ripplesElement?.offsetWidth;
 		let lastHeight = ripplesElement?.offsetHeight;
+		let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
 
 		if (ripplesElement && typeof ResizeObserver !== 'undefined') {
 			resizeObserver = new ResizeObserver(() => {
 				const currentWidth = ripplesElement.offsetWidth;
 				const currentHeight = ripplesElement.offsetHeight;
 
-				// Only recreate if size actually changed
-				if (currentWidth !== lastWidth || currentHeight !== lastHeight) {
+				// Only recreate if size actually changed significantly (more than 5px)
+				const widthChanged = Math.abs(currentWidth - (lastWidth || 0)) > 5;
+				const heightChanged = Math.abs(currentHeight - (lastHeight || 0)) > 5;
+
+				if (widthChanged || heightChanged) {
 					lastWidth = currentWidth;
 					lastHeight = currentHeight;
 
-					if (ripples && animated) {
-						// Destroy old instance
-						ripples.destroy();
-						ripples = null;
-
-						// Recreate with new resolution based on new size
-						const newResolution = Math.min(512, currentWidth / 2);
-						const newRippleOptions = {
-							...rippleOptions,
-							resolution: newResolution
-						};
-
-						try {
-							ripples = new Ripples(ripplesElement, newRippleOptions);
-						} catch (e) {
-							console.log(e);
-						}
+					// Debounce the recreation to avoid too many WebGL contexts
+					if (resizeTimeout) {
+						clearTimeout(resizeTimeout);
 					}
+
+					resizeTimeout = setTimeout(() => {
+						if (animated && ripplesElement) {
+							// Destroy old instance first
+							if (ripples) {
+								try {
+									ripples.destroy();
+								} catch (e) {
+									console.error('Error destroying ripples:', e);
+								}
+								ripples = null;
+							}
+
+							// Wait a frame before creating new instance to ensure cleanup
+							requestAnimationFrame(() => {
+								if (!ripples && animated && ripplesElement) {
+									const newResolution = Math.min(512, currentWidth / 2);
+									const newRippleOptions = {
+										...rippleOptions,
+										resolution: newResolution
+									};
+
+									try {
+										ripples = new Ripples(ripplesElement, newRippleOptions);
+									} catch (e) {
+										console.error('Error creating ripples:', e);
+									}
+								}
+							});
+						}
+					}, 100); // 100ms debounce
 				}
 			});
 			resizeObserver.observe(ripplesElement);
@@ -88,12 +109,12 @@
 			const deltaTime = lastTime ? time - lastTime : 0;
 			lastTime = time;
 
-			// Create ripples if needed
-			if (animated && !ripples && ripplesElement) {
+			// Create ripples if needed (and not already being created by resize)
+			if (animated && !ripples && ripplesElement && !resizeTimeout) {
 				try {
 					ripples = new Ripples(ripplesElement, rippleOptions);
 				} catch (e) {
-					console.log(e);
+					console.error('Error creating ripples in animation loop:', e);
 				}
 			}
 
@@ -152,8 +173,15 @@
 		}
 
 		return function () {
+			if (resizeTimeout) {
+				clearTimeout(resizeTimeout);
+			}
 			if (ripples) {
-				ripples.destroy();
+				try {
+					ripples.destroy();
+				} catch (e) {
+					console.error('Error destroying ripples on cleanup:', e);
+				}
 			}
 			if (resizeObserver) {
 				resizeObserver.disconnect();
