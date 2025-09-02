@@ -96,7 +96,9 @@
 
 	.layout-box {
 		border: 2px dashed #ff0000;
-		display: inline-block;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		background: #f0f0f0;
 	}
 
