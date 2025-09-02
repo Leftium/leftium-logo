@@ -310,6 +310,12 @@
 		z-index: 2;
 		cursor: pointer;
 		outline: none;
+
+		/* Prevent PicoCSS [role=button] styles. */
+		border: none !important;
+		border-radius: 0 !important;
+		outline: none !important;
+		box-shadow: none !important;
 	}
 
 	.ripples.square:focus {
