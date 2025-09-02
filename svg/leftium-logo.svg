@@ -29,15 +29,15 @@
      inkscape:document-units="px"
      showborder="true"
      borderlayer="true"
-     inkscape:zoom="0.34562754"
-     inkscape:cx="179.38385"
-     inkscape:cy="1003.9709"
+     inkscape:zoom="0.36091125"
+     inkscape:cx="-166.24586"
+     inkscape:cy="834.00004"
      inkscape:window-width="2560"
      inkscape:window-height="1377"
      inkscape:window-x="0"
      inkscape:window-y="25"
      inkscape:window-maximized="0"
-     inkscape:current-layer="g1"
+     inkscape:current-layer="layer1"
      inkscape:antialias-rendering="true"
      showgrid="false"
      labelstyle="default"
@@ -118,7 +118,7 @@
      inkscape:groupmode="layer"
      id="layer1">
     <rect
-       style="display:none;opacity:1;fill:#ffffff;stroke:#000000;stroke-width:0.904606;stroke-opacity:1"
+       style="display:inline;opacity:1;fill:#ffffff;stroke:#000000;stroke-width:0.904606;stroke-opacity:1"
        id="rect1"
        width="1999.0953"
        height="1999.0958"
@@ -137,6 +137,17 @@
        id="g1"
        transform="translate(253.40376,284.58137)"
        style="display:inline">
+      <ellipse
+         style="display:none;opacity:0.5;fill:#00ff00;fill-opacity:0;stroke:#000000;stroke-width:0.822562;stroke-miterlimit:10.2;stroke-dasharray:none;stroke-opacity:1;paint-order:markers fill stroke"
+         id="circle1"
+         cx="592.64209"
+         cy="566.41864"
+         inkscape:label="enclosing-circle"
+         inkscape:export-filename="/Users/leftium/Desktop/export/shadow.webp"
+         inkscape:export-xdpi="47.232471"
+         inkscape:export-ydpi="47.232471"
+         rx="723.08875"
+         ry="812.58868" />
       <circle
          style="display:none;opacity:0.5;fill:#ff00e4;fill-opacity:1;stroke:#000000;stroke-width:0.912129;stroke-miterlimit:10.2;stroke-dasharray:none;stroke-opacity:1;paint-order:markers fill stroke"
          id="path4"
