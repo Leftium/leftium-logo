@@ -3,10 +3,29 @@
 </script>
 
 <div class="demo-container">
+	<div class="test-section">
+		<h3>Inline Text Alignment</h3>
+		<div class="inline-test">
+			Text before
+			<LeftiumLogo size="30px" animated={false} boundingBox="square" />
+			text after (square)
+		</div>
+		<div class="inline-test">
+			Text before
+			<LeftiumLogo size="24px" animated={false} boundingBox="default" />
+			text after (default)
+		</div>
+		<div class="inline-test">
+			Text before
+			<LeftiumLogo size="20px" animated={false} boundingBox="encircled" />
+			text after (encircled)
+		</div>
+	</div>
+
 	<h2>Bounding Box Test</h2>
 
 	<div class="test-section">
-		<h3>Square Bounding Box (default)</h3>
+		<h3>Square Bounding Box</h3>
 		<div class="test-row">
 			<div class="layout-box">
 				<LeftiumLogo size="200px" animated={false} boundingBox="square" />
@@ -19,6 +38,22 @@
 			</div>
 		</div>
 		<p>Red box shows layout bounds matching just the blue square</p>
+	</div>
+
+	<div class="test-section">
+		<h3>Default Bounding Box</h3>
+		<div class="test-row">
+			<div class="layout-box">
+				<LeftiumLogo size="160px" animated={false} boundingBox="default" />
+			</div>
+			<div class="layout-box">
+				<LeftiumLogo size="120px" animated={false} boundingBox="default" />
+			</div>
+			<div class="layout-box">
+				<LeftiumLogo size="80px" animated={false} boundingBox="default" />
+			</div>
+		</div>
+		<p>Red box shows layout bounds at average between square and encircled</p>
 	</div>
 
 	<div class="test-section">
@@ -36,23 +71,13 @@
 		</div>
 		<p>Red box shows layout bounds for full logo with padding (800x800 canvas)</p>
 	</div>
-
-	<div class="test-section">
-		<h3>Inline Text Alignment</h3>
-		<div class="inline-test">
-			Text before
-			<LeftiumLogo size="30px" animated={false} boundingBox="square" />
-			text after (square)
-		</div>
-		<div class="inline-test">
-			Text before
-			<LeftiumLogo size="20px" animated={false} boundingBox="encircled" />
-			text after (encircled)
-		</div>
-	</div>
 </div>
 
 <style>
+	:global(body) {
+		overflow-y: auto !important;
+	}
+
 	.demo-container {
 		padding: 40px;
 		font-family: sans-serif;

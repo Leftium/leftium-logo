@@ -1,18 +1,23 @@
 <script lang="ts">
 	import LeftiumLogo from '$lib/LeftiumLogo.svelte';
 
-	let boundingBox: 'square' | 'encircled' = $state('encircled');
+	let boundingBox: 'square' | 'default' | 'encircled' = $state('default');
 </script>
 
 <center>
 	<div class="controls">
-		<label>
-			<input type="radio" bind:group={boundingBox} value="encircled" />
-			Encircled bounding box
-		</label>
+		<b>Bounding Box:</b>
 		<label>
 			<input type="radio" bind:group={boundingBox} value="square" />
-			Square bounding box
+			Square (tight)
+		</label>
+		<label>
+			<input type="radio" bind:group={boundingBox} value="default" />
+			Default
+		</label>
+		<label>
+			<input type="radio" bind:group={boundingBox} value="encircled" />
+			Encircled (spacious)
 		</label>
 	</div>
 	<div>View the <a href="https://github.com/Leftium/leftium-logo">source code</a>!</div>

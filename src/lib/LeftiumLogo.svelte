@@ -12,7 +12,7 @@
 		animated?: boolean;
 		toggleAnimationWithShift?: boolean;
 		ripplesOptions?: RipplesOptions;
-		boundingBox?: 'square' | 'encircled';
+		boundingBox?: 'square' | 'default' | 'encircled';
 	}
 
 	let {
@@ -20,7 +20,7 @@
 		animated = true,
 		toggleAnimationWithShift = false,
 		ripplesOptions: ripplesOptionsProp = {},
-		boundingBox = 'encircled'
+		boundingBox = 'default'
 	}: Props = $props();
 
 	let ripples: Ripples | null;
@@ -262,6 +262,12 @@
 		height: var(--size);
 	}
 
+	/* Default bounding box mode - average between square and encircled */
+	logo-container.default {
+		width: calc(var(--size) * 1.2519); /* Average of 1.0 and 1.5037 */
+		height: calc(var(--size) * 1.2519);
+	}
+
 	/* Encircled bounding box mode - size for full logo with padding */
 	logo-container.encircled {
 		width: calc(var(--size) * 1.5037); /* 800/532 ratio */
@@ -282,6 +288,14 @@
 	.square grid-logo {
 		left: 0;
 		top: 0;
+	}
+
+	.default grid-logo {
+		/* Center the square within the default bounds */
+		/* Default is average between square (0 offset) and encircled (134px offset) */
+		/* 67px offset at 532px scale */
+		left: calc(var(--size) * 0.1259); /* 67/532 ratio */
+		top: calc(var(--size) * 0.1259);
 	}
 
 	.encircled grid-logo {
