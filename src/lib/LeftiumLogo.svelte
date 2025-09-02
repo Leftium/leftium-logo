@@ -322,10 +322,6 @@
 		outline: none;
 	}
 
-	.square:focus {
-		outline: none;
-	}
-
 	/* Glow - 647x647, centered on square */
 	.glow {
 		width: calc(100% * 647 / 532);
@@ -358,8 +354,8 @@
 		height: calc(100% * 666 / 532);
 		/* Ligature extends to the right and below the square */
 		/* Looking at the SVG path, the ligature starts at top-left and extends right and down */
-		left: calc(100% * 134 / 532);
-		top: calc(100% * -65 / 532);
+		left: calc(100% * 133.5 / 532);
+		top: calc(100% * -65.75 / 532);
 		z-index: 3;
 		pointer-events: none;
 	}
