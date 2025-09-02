@@ -249,6 +249,8 @@
 	logo-container {
 		display: inline-block;
 		position: relative;
+		width: var(--size);
+		aspect-ratio: 1;
 		user-select: none;
 		-webkit-user-select: none;
 		-moz-user-select: none;
@@ -256,53 +258,38 @@
 		overflow: visible;
 	}
 
-	/* Square bounding box mode - size matches the square */
-	logo-container.square {
-		width: var(--size);
-		height: var(--size);
-	}
-
-	/* Default bounding box mode - average between square and encircled */
-	logo-container.default {
-		width: calc(var(--size) * 1.2519); /* Average of 1.0 and 1.5037 */
-		height: calc(var(--size) * 1.2519);
-	}
-
-	/* Encircled bounding box mode - size for full logo with padding */
-	logo-container.encircled {
-		width: calc(var(--size) * 1.5037); /* 800/532 ratio */
-		height: calc(var(--size) * 1.5037);
-	}
-
 	/* Grid that holds all the logo elements */
 	grid-logo {
 		position: absolute;
 		display: grid;
 		place-items: center;
-		/* Always size based on the square dimensions */
-		width: var(--size);
-		height: var(--size);
+		width: 100%; /* Default width, will be overridden for default/encircled modes */
+		aspect-ratio: 1;
 	}
 
-	/* Position grid differently based on bounding box mode */
-	.square grid-logo {
+	/* Square bounding box mode - grid fills the container */
+	logo-container.square grid-logo {
+		width: 100%;
 		left: 0;
 		top: 0;
 	}
 
-	.default grid-logo {
-		/* Center the square within the default bounds */
-		/* Default is average between square (0 offset) and encircled (134px offset) */
-		/* 67px offset at 532px scale */
-		left: calc(var(--size) * 0.1259); /* 67/532 ratio */
-		top: calc(var(--size) * 0.1259);
+	/* Default bounding box mode - grid is scaled down to leave some padding */
+	logo-container.default grid-logo {
+		/* Grid is 1/1.2519 = 79.88% of container to account for padding */
+		width: calc(100% / 1.2519);
+		/* Center within container */
+		left: calc((100% - 100% / 1.2519) / 2);
+		top: calc((100% - 100% / 1.2519) / 2);
 	}
 
-	.encircled grid-logo {
-		/* Center the square within the encircled bounds */
-		/* (800 - 532) / 2 = 134px offset at 800px scale */
-		left: calc(var(--size) * 0.2518); /* 134/532 ratio */
-		top: calc(var(--size) * 0.2518);
+	/* Encircled bounding box mode - grid is scaled down more to leave full padding */
+	logo-container.encircled grid-logo {
+		/* Grid is 1/1.5037 = 66.5% of container (532/800) */
+		width: calc(100% / 1.5037);
+		/* Center within container */
+		left: calc((100% - 100% / 1.5037) / 2);
+		top: calc((100% - 100% / 1.5037) / 2);
 	}
 
 	/* Individual logo elements positioned relative to the square */
@@ -313,8 +300,8 @@
 		will-change: auto;
 	}
 
-	/* Square - base element at 532x532 */
-	.square {
+	/* Square image - base element at 532x532 */
+	.ripples.square {
 		width: 100%;
 		height: 100%;
 		background-size: contain;
@@ -322,6 +309,10 @@
 		background-repeat: no-repeat;
 		z-index: 2;
 		cursor: pointer;
+		outline: none;
+	}
+
+	.ripples.square:focus {
 		outline: none;
 	}
 
