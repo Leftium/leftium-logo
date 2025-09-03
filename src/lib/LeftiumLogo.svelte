@@ -40,12 +40,27 @@
 		const elementSize = ripplesElement?.offsetWidth || 100;
 		const resolution = !ripplesElement ? 512 : Math.min(512, Math.max(128, elementSize * 0.8));
 
+		// Scale drop radius based on element size: 15px at 500px down to 2px at 62px
+		// Linear interpolation from 62px:2px to 800px:23.36px, capped at 20px
+		// Formula: 2 + ((elementSize - 62) / (800 - 62)) * (23.36 - 2)
+		const scaledDropRadius = Math.min(
+			20,
+			Math.max(2, 2 + ((elementSize - 62) / (800 - 62)) * 21.36)
+		);
+
+		// Scale wave propagation based on element size: 2.0 at 500px down to 0.5 at 125px
+		// Linear interpolation for sizes 500px down to 125px, then clamp at 0.5 for smaller
+		const scaledWavePropagation = Math.max(
+			0.5,
+			Math.min(2.0, 2.0 - ((500 - elementSize) / (500 - 125)) * 1.5)
+		);
+
 		const DEFAULT_RIPPLES_OPTIONS = {
 			resolution,
-			dropRadius: 15,
+			dropRadius: scaledDropRadius,
 			perturbance: 0.04,
 			// Ripple tuning parameters
-			wavePropagation: 2.0, // Wave propagation speed (2.0 = normal, 3.0 = faster)
+			wavePropagation: scaledWavePropagation,
 			dampening: 0.997 // Ripple dampening (0.999 = very long lasting, 0.995 = normal, 0.99 = quick fade)
 		};
 		const rippleOptions = { ...DEFAULT_RIPPLES_OPTIONS, ...ripplesOptionsProp };
@@ -91,9 +106,21 @@
 								if (!ripples && animated && ripplesElement) {
 									// Higher resolution for smaller sizes to avoid blurriness
 									const newResolution = Math.min(512, Math.max(128, currentWidth * 0.8));
+									// Scale drop radius and wave propagation for new size
+									// Linear interpolation from 62px:2px to 800px:23.36px, capped at 20px
+									const newScaledDropRadius = Math.min(
+										20,
+										Math.max(2, 2 + ((currentWidth - 62) / (800 - 62)) * 21.36)
+									);
+									const newScaledWavePropagation = Math.max(
+										0.5,
+										Math.min(2.0, 2.0 - ((500 - currentWidth) / (500 - 125)) * 1.5)
+									);
 									const newRippleOptions = {
 										...rippleOptions,
-										resolution: newResolution
+										resolution: newResolution,
+										dropRadius: newScaledDropRadius,
+										wavePropagation: newScaledWavePropagation
 									};
 
 									try {
@@ -137,10 +164,16 @@
 					lastDropTime = time;
 					const x = Math.random() * ripplesElement.offsetWidth;
 					const y = Math.random() * ripplesElement.offsetHeight;
+					// Use scaled drop radius for automatic drops
+					const currentSize = ripplesElement.offsetWidth;
+					const autoDropRadius = Math.min(
+						20,
+						Math.max(2, 2 + ((currentSize - 62) / (800 - 62)) * 21.36)
+					);
 					// Scale strength based on size - gentler ripples for smaller logos
-					const sizeFactor = Math.min(1, ripplesElement.offsetWidth / 200);
+					const sizeFactor = Math.min(1, currentSize / 200);
 					const strength = (0.1 + Math.random() * 0.04) * sizeFactor;
-					ripples.drop(x, y, rippleOptions.dropRadius, strength);
+					ripples.drop(x, y, autoDropRadius, strength);
 				}
 			}
 
