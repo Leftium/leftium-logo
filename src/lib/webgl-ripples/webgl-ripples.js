@@ -214,13 +214,16 @@ if (isBrowser) {
 
 const DEFAULTS = {
 	imageUrl: null,
-	resolution: 256,
-	dropRadius: 20,
-	perturbance: 0.03,
+	dropRadius: 15,
+	perturbance: 0.04,
+	resolution: 512,
 	interactive: true,
 	crossOrigin: '',
-	// NEW: Options for handling transparent margins
-	contentBounds: null // Manual override for content bounds {x, y, width, height} as percentages
+	contentBounds: null, // Manual override for content bounds {x, y, width, height} as percentages
+
+	// Ripple tuning parameters
+	wavePropagation: 2.0, // Wave propagation speed (2.0 = normal, 3.0 = faster)
+	dampening: 0.997 // Ripple dampening (0.999 = very long lasting, 0.995 = normal, 0.99 = quick fade)
 };
 
 // RIPPLES CLASS DEFINITION
@@ -666,6 +669,10 @@ class Ripples {
 		bindTexture(this.textures[this.bufferReadIndex]);
 		gl.useProgram(this.updateProgram.id);
 
+		// Set the wave propagation uniforms every frame
+		gl.uniform1f(this.updateProgram.locations.wavePropagation, this.options.wavePropagation);
+		gl.uniform1f(this.updateProgram.locations.dampening, this.options.dampening);
+
 		this.drawQuad();
 
 		this.swapBufferIndices();
@@ -853,6 +860,8 @@ class Ripples {
 
 				'uniform sampler2D texture;',
 				'uniform vec2 delta;',
+				'uniform float wavePropagation;',
+				'uniform float dampening;',
 
 				'varying vec2 coord;',
 
@@ -876,8 +885,9 @@ class Ripples {
 				'texture2D(texture, coord + dy).r',
 				') * 0.25;',
 
-				'info.g += (average - info.r) * 2.0;',
-				'info.g *= 0.995 * edgeFactor;', // Apply edge dampening
+				'// Wave propagation and dampening with configurable parameters',
+				'info.g += (average - info.r) * wavePropagation;',
+				'info.g *= dampening * edgeFactor;',
 				'info.r += info.g;',
 
 				'// Clamp values to prevent overflow artifacts',
@@ -889,6 +899,8 @@ class Ripples {
 			].join('\n')
 		);
 		gl.uniform2fv(this.updateProgram.locations.delta, this.textureDelta);
+		gl.uniform1f(this.updateProgram.locations.wavePropagation, this.options.wavePropagation);
+		gl.uniform1f(this.updateProgram.locations.dampening, this.options.dampening);
 
 		this.renderProgram = createProgram(
 			[
@@ -1118,6 +1130,29 @@ class Ripples {
 				}
 			};
 			this.animationId = requestAnimationFrame(step);
+		}
+	}
+
+	reset() {
+		if (this.destroyed || !gl) return;
+
+		gl = this.context;
+		const arrayType = config ? config.arrayType : null;
+		const textureData = arrayType ? new arrayType(this.resolution * this.resolution * 4) : null;
+
+		for (let i = 0; i < 2; i++) {
+			gl.bindTexture(gl.TEXTURE_2D, this.textures[i]);
+			gl.texImage2D(
+				gl.TEXTURE_2D,
+				0,
+				gl.RGBA,
+				this.resolution,
+				this.resolution,
+				0,
+				gl.RGBA,
+				(config && config.type) || gl.UNSIGNED_BYTE,
+				textureData
+			);
 		}
 	}
 

@@ -40,13 +40,13 @@
 		const elementSize = ripplesElement?.offsetWidth || 100;
 		const resolution = !ripplesElement ? 512 : Math.min(512, Math.max(128, elementSize * 0.8));
 
-		// Scale drop radius based on element size - smaller drops for smaller logos
-		const scaledDropRadius = Math.max(10, Math.min(30, elementSize / 10)); // Range from 10-30px
-
 		const DEFAULT_RIPPLES_OPTIONS = {
 			resolution,
-			dropRadius: scaledDropRadius,
-			perturbance: 0.01
+			dropRadius: 15,
+			perturbance: 0.04,
+			// Ripple tuning parameters
+			wavePropagation: 2.0, // Wave propagation speed (2.0 = normal, 3.0 = faster)
+			dampening: 0.997 // Ripple dampening (0.999 = very long lasting, 0.995 = normal, 0.99 = quick fade)
 		};
 		const rippleOptions = { ...DEFAULT_RIPPLES_OPTIONS, ...ripplesOptionsProp };
 
@@ -91,11 +91,9 @@
 								if (!ripples && animated && ripplesElement) {
 									// Higher resolution for smaller sizes to avoid blurriness
 									const newResolution = Math.min(512, Math.max(128, currentWidth * 0.8));
-									const scaledDropRadius = Math.max(10, Math.min(30, currentWidth / 10));
 									const newRippleOptions = {
 										...rippleOptions,
-										resolution: newResolution,
-										dropRadius: scaledDropRadius
+										resolution: newResolution
 									};
 
 									try {
@@ -135,7 +133,7 @@
 
 			// Automatic drops (only when animated)
 			if (animated && lastDropTime !== null && ripples && ripplesElement) {
-				if (time - lastDropTime > 1500) {
+				if (time - lastDropTime > 3000) {
 					lastDropTime = time;
 					const x = Math.random() * ripplesElement.offsetWidth;
 					const y = Math.random() * ripplesElement.offsetHeight;
