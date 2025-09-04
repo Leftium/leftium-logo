@@ -2,6 +2,16 @@
 	// Test pages listing
 	const testPages = [
 		{
+			name: 'Ripples Tuning',
+			path: '/test/ripples-tuning',
+			description: 'Fine-tune ripples parameters'
+		},
+		{
+			name: 'Ripples Original',
+			path: '/test/ripples-original',
+			description: 'Original ripples implementation'
+		},
+		{
 			name: 'Bounding Box Tests',
 			path: '/test/bounding',
 			description: 'Test different bounding box modes'
@@ -10,16 +20,6 @@
 			name: 'Responsive Tests',
 			path: '/test/responsive',
 			description: 'Test responsiveness across screen sizes'
-		},
-		{
-			name: 'Ripples Original',
-			path: '/test/ripples-original',
-			description: 'Original ripples implementation'
-		},
-		{
-			name: 'Ripples Tuning',
-			path: '/test/ripples-tuning',
-			description: 'Fine-tune ripples parameters'
 		}
 	];
 </script>
