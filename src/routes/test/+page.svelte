@@ -6,17 +6,10 @@
 			path: '/test/bounding',
 			description: 'Test different bounding box modes'
 		},
-		{ name: 'Debug View', path: '/test/debug', description: 'Debug information and controls' },
 		{
 			name: 'Responsive Tests',
 			path: '/test/responsive',
 			description: 'Test responsiveness across screen sizes'
-		},
-		{ name: 'Ripples Basic', path: '/test/ripples', description: 'Basic ripples functionality' },
-		{
-			name: 'Ripples Controls',
-			path: '/test/ripples-controls',
-			description: 'Interactive ripples controls'
 		},
 		{
 			name: 'Ripples Original',

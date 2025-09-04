@@ -24,7 +24,10 @@
 			Encircled (spacious)
 		</label>
 	</div>
-	<div>View the <a href="https://github.com/Leftium/leftium-logo">source code</a>!</div>
+	<div>
+		View the <a href="https://github.com/Leftium/leftium-logo">source code</a> or
+		<a href="/test">test pages</a>!
+	</div>
 
 	<div class="logo-wrapper {boundingBox}">
 		<LeftiumLogo size="calc(min(60svh, 60svw))" {boundingBox}></LeftiumLogo>
