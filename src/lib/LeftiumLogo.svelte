@@ -365,13 +365,16 @@
 		top: calc((100% - 100% / 1.5037) / 2);
 	}
 
-	/* Cropped bounding box mode - grid scaled to fit ellipse average dimension */
+	/* Cropped bounding box mode - grid scaled and positioned to match reference SVG */
 	logo-container.cropped grid-logo {
-		/* Scale based on ellipse average dimension: (679.5+763.6)/2 = 721.55 -> 532/721.55 ≈ 0.737 */
-		width: calc(100% / (1 / 0.737));
-		/* Center within container */
-		left: calc((100% - 100% / (1 / 0.737)) / 2);
-		top: calc((100% - 100% / (1 / 0.737)) / 2);
+		/* Square is 1131.371px in a 1447px wide container = 78.2% */
+		width: 78.2%;
+		/* Position calculations from SVG transforms */
+		/* Final square position after transforms: x=122.18, y=247.73 */
+		/* Left offset: 122.18/1447 = 8.44% */
+		left: 8.44%;
+		/* Top offset: 247.73/1626.9 = 15.23% */
+		top: 15.23%;
 	}
 
 	/* Individual logo elements positioned relative to the square */
