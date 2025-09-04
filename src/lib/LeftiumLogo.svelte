@@ -12,7 +12,7 @@
 		animated?: boolean;
 		toggleAnimationWithShift?: boolean;
 		ripplesOptions?: RipplesOptions;
-		boundingBox?: 'square' | 'default' | 'encircled';
+		boundingBox?: 'square' | 'default' | 'cropped' | 'encircled';
 		class?: string;
 		[key: string]: any; // Allow any additional props
 	}
@@ -343,6 +343,15 @@
 		/* Center within container */
 		left: calc((100% - 100% / 1.5037) / 2);
 		top: calc((100% - 100% / 1.5037) / 2);
+	}
+
+	/* Cropped bounding box mode - grid is scaled to fit the crop ellipse */
+	logo-container.cropped grid-logo {
+		/* Grid is 1/1.436 = 69.6% of container (532/764) */
+		width: calc(100% / 1.436);
+		/* Center within container */
+		left: calc((100% - 100% / 1.436) / 2);
+		top: calc((100% - 100% / 1.436) / 2);
 	}
 
 	/* Individual logo elements positioned relative to the square */

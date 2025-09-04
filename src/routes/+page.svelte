@@ -1,7 +1,7 @@
 <script lang="ts">
 	import LeftiumLogo from '$lib/LeftiumLogo.svelte';
 
-	let boundingBox: 'square' | 'default' | 'encircled' = $state('default');
+	let boundingBox: 'square' | 'default' | 'encircled' | 'cropped' = $state('default');
 </script>
 
 <center>
@@ -14,6 +14,10 @@
 		<label>
 			<input type="radio" bind:group={boundingBox} value="default" />
 			Default
+		</label>
+		<label>
+			<input type="radio" bind:group={boundingBox} value="cropped" />
+			Cropped
 		</label>
 		<label>
 			<input type="radio" bind:group={boundingBox} value="encircled" />
