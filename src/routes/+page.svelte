@@ -17,11 +17,11 @@
 		</label>
 		<label>
 			<input type="radio" bind:group={boundingBox} value="cropped" />
-			Cropped
+			Cropped (non-square)
 		</label>
 		<label>
 			<input type="radio" bind:group={boundingBox} value="encircled" />
-			Encircled (spacious)
+			Encircled (roomy)
 		</label>
 	</div>
 	<div>
