@@ -306,6 +306,26 @@
 		overflow: visible;
 	}
 
+	/* Square mode - square container */
+	logo-container.square {
+		aspect-ratio: 1;
+	}
+
+	/* Default mode - square container */
+	logo-container.default {
+		aspect-ratio: 1;
+	}
+
+	/* Encircled mode - square container */
+	logo-container.encircled {
+		aspect-ratio: 1;
+	}
+
+	/* Cropped mode - match ellipse aspect ratio: 723.08875/812.58868 ≈ 0.8906 */
+	logo-container.cropped {
+		aspect-ratio: 0.8906;
+	}
+
 	/* Grid that holds all the logo elements */
 	grid-logo {
 		position: absolute;
@@ -345,13 +365,13 @@
 		top: calc((100% - 100% / 1.5037) / 2);
 	}
 
-	/* Cropped bounding box mode - grid is scaled to fit the crop ellipse */
+	/* Cropped bounding box mode - grid scaled to fit ellipse average dimension */
 	logo-container.cropped grid-logo {
-		/* Grid is 1/1.436 = 69.6% of container (532/764) */
-		width: calc(100% / 1.436);
+		/* Scale based on ellipse average dimension: (679.5+763.6)/2 = 721.55 -> 532/721.55 ≈ 0.737 */
+		width: calc(100% / (1 / 0.737));
 		/* Center within container */
-		left: calc((100% - 100% / 1.436) / 2);
-		top: calc((100% - 100% / 1.436) / 2);
+		left: calc((100% - 100% / (1 / 0.737)) / 2);
+		top: calc((100% - 100% / (1 / 0.737)) / 2);
 	}
 
 	/* Individual logo elements positioned relative to the square */

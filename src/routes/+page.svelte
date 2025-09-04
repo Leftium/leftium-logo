@@ -26,7 +26,9 @@
 	</div>
 	<div>View the <a href="https://github.com/Leftium/leftium-logo">source code</a>!</div>
 
-	<LeftiumLogo size="calc(min(60svh, 60svw))" {boundingBox}></LeftiumLogo>
+	<div class="logo-wrapper {boundingBox}">
+		<LeftiumLogo size="calc(min(60svh, 60svw))" {boundingBox}></LeftiumLogo>
+	</div>
 </center>
 
 <style>
@@ -49,5 +51,17 @@
 		display: flex;
 		align-items: center;
 		gap: 5px;
+	}
+
+	/* Add dashed border around logo for testing */
+	.logo-wrapper {
+		display: inline-block;
+		border: 3px dashed red;
+		aspect-ratio: 1;
+	}
+
+	/* Cropped mode - match ellipse aspect ratio */
+	.logo-wrapper.cropped {
+		aspect-ratio: 0.8906;
 	}
 </style>
