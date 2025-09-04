@@ -60,11 +60,6 @@
 	.logo-wrapper {
 		display: inline-block;
 		border: 3px dashed red;
-		aspect-ratio: 1;
-	}
-
-	/* Cropped mode - match ellipse aspect ratio */
-	.logo-wrapper.cropped {
-		aspect-ratio: 0.8906;
+		line-height: 0; /* Remove baseline spacing */
 	}
 </style>
