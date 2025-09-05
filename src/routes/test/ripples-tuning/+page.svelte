@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Ripples } from '$lib/webgl-ripples/webgl-ripples.js';
-	import logoSquare from '$lib/assets/logo-parts/square.webp';
+	import logoSquare from '$lib/assets/logo-parts/square.svg?inline';
 
 	let containers: { [key: string]: HTMLDivElement } = {
 		large: null as any,
@@ -186,7 +186,7 @@
 				<div
 					class="ripple-container large"
 					bind:this={containers.large}
-					style:background-image="url({logoSquare})"
+					style:background-image={`url("${logoSquare}")`}
 				></div>
 				<span class="size-label">500px</span>
 			</div>
@@ -195,7 +195,7 @@
 				<div
 					class="ripple-container medium"
 					bind:this={containers.medium}
-					style:background-image="url({logoSquare})"
+					style:background-image={`url("${logoSquare}")`}
 				></div>
 				<span class="size-label">250px</span>
 			</div>
@@ -204,7 +204,7 @@
 				<div
 					class="ripple-container small"
 					bind:this={containers.small}
-					style:background-image="url({logoSquare})"
+					style:background-image={`url("${logoSquare}")`}
 				></div>
 				<span class="size-label">125px</span>
 			</div>
@@ -213,7 +213,7 @@
 				<div
 					class="ripple-container tiny"
 					bind:this={containers.tiny}
-					style:background-image="url({logoSquare})"
+					style:background-image={`url("${logoSquare}")`}
 				></div>
 				<span class="size-label">62px</span>
 			</div>

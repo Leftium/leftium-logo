@@ -2,10 +2,10 @@
 	import type { Attachment } from 'svelte/attachments';
 	import { Ripples, type RipplesOptions } from '$lib/webgl-ripples/webgl-ripples.js';
 
-	import logoGlow from '$lib/assets/logo-parts/glow.webp';
-	import logoLigature from '$lib/assets/logo-parts/ligature.webp';
-	import logoShadow from '$lib/assets/logo-parts/shadow.webp';
-	import logoSquare from '$lib/assets/logo-parts/square.webp';
+	import logoGlow from '$lib/assets/logo-parts/glow.svg';
+	import logoLigature from '$lib/assets/logo-parts/ligature.svg';
+	import logoShadow from '$lib/assets/logo-parts/shadow.svg';
+	import logoSquare from '$lib/assets/logo-parts/square.svg?inline';
 
 	interface Props {
 		size?: string;
@@ -281,7 +281,7 @@
 		<img class="glow" alt="" src={logoGlow} />
 		<div
 			class="ripples square"
-			style:background-image="url({logoSquare})"
+			style:background-image={`url("${logoSquare}")`}
 			onclick={handleClick}
 			onkeydown={handleClick}
 			role="button"

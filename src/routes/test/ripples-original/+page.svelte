@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Ripples as RipplesModified } from '$lib/webgl-ripples/webgl-ripples.js';
-	import logoSquare from '$lib/assets/logo-parts/square.webp';
+	import logoSquare from '$lib/assets/logo-parts/square.svg?inline';
 
 	let modifiedContainer: HTMLDivElement;
 	let originalContainer: HTMLDivElement;
@@ -31,7 +31,6 @@
 				try {
 					const Ripples = (window as any).Ripples;
 					originalRipples = new Ripples(originalContainer, {
-						//imageUrl: logoSquare,
 						resolution: 512,
 						dropRadius: 20,
 						perturbance: 0.04,
@@ -91,7 +90,7 @@
 			<div
 				class="ripple-container"
 				bind:this={modifiedContainer}
-				style:background-image="url({logoSquare})"
+				style:background-image={`url("${logoSquare}")`}
 			></div>
 			<button onclick={dropModified}>Manual Drop</button>
 			<div class="status">✅ Working</div>
@@ -103,7 +102,7 @@
 			<div
 				class="ripple-container"
 				bind:this={originalContainer}
-				style:background-image="url({logoSquare})"
+				style:background-image={`url("${logoSquare}")`}
 			></div>
 			<button onclick={dropOriginal}>Manual Drop</button>
 			<div class="status" id="original-status">⏳ Loading...</div>
