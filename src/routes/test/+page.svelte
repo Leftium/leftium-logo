@@ -2,6 +2,11 @@
 	// Test pages listing
 	const testPages = [
 		{
+			name: 'Logo Scaling Test',
+			path: '/test/logo-scaling',
+			description: 'Compare LeftiumLogo scaling algorithms at different sizes'
+		},
+		{
 			name: 'Ripples Tuning',
 			path: '/test/ripples-tuning',
 			description: 'Fine-tune ripples parameters'
