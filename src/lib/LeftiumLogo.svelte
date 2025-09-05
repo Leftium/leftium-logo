@@ -14,7 +14,8 @@
 		ripplesOptions?: RipplesOptions;
 		boundingBox?: 'square' | 'default' | 'cropped' | 'encircled';
 		class?: string;
-		[key: string]: any; // Allow any additional props
+		onClick?: (event: MouseEvent | KeyboardEvent) => void;
+		[key: string]: unknown; // Allow any additional props
 	}
 
 	let {
@@ -24,6 +25,7 @@
 		ripplesOptions: ripplesOptionsProp = {},
 		boundingBox = 'default',
 		class: className = '',
+		onClick = undefined,
 		...restProps
 	}: Props = $props();
 
@@ -239,6 +241,11 @@
 	};
 
 	function handleClick(event: MouseEvent | KeyboardEvent) {
+		// Call external callback first if provided
+		if (onClick) {
+			onClick(event);
+		}
+
 		// For keyboard events, only respond to Enter key
 		if ('key' in event && event.key !== 'Enter') {
 			return;

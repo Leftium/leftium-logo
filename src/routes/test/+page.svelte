@@ -25,6 +25,11 @@
 			name: 'Responsive Tests',
 			path: '/test/responsive',
 			description: 'Test responsiveness across screen sizes'
+		},
+		{
+			name: 'onClick Callback Test',
+			path: '/test/onclick-callback',
+			description: 'Test the new onClick callback functionality'
 		}
 	];
 </script>
