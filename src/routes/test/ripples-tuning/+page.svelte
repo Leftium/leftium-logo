@@ -250,7 +250,7 @@
 				<input
 					type="range"
 					bind:value={wavePropagation}
-					min="0.5"
+					min="0.1"
 					max="2.0"
 					step="0.1"
 					on:change={recreateRipples}
