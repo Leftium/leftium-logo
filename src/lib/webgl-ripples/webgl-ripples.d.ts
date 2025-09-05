@@ -5,12 +5,6 @@ export interface RipplesOptions {
 	perturbance?: number;
 	interactive?: boolean;
 	crossOrigin?: string;
-	contentBounds?: {
-		x: number;
-		y: number;
-		width: number;
-		height: number;
-	} | null;
 }
 
 export declare class Ripples {

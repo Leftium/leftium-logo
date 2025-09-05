@@ -219,11 +219,8 @@ const DEFAULTS = {
 	resolution: 512,
 	interactive: true,
 	crossOrigin: '',
-	contentBounds: null, // Manual override for content bounds {x, y, width, height} as percentages
-
-	// Ripple tuning parameters
-	wavePropagation: 2.0, // Wave propagation speed (2.0 = normal, 3.0 = faster)
-	dampening: 0.997 // Ripple dampening (0.999 = very long lasting, 0.995 = normal, 0.99 = quick fade)
+	wavePropagation: 2,
+	dampening: 0.997
 };
 
 // RIPPLES CLASS DEFINITION
@@ -255,12 +252,8 @@ class Ripples {
 
 		this.perturbance = this.options.perturbance;
 		this.dropRadius = this.options.dropRadius;
-
 		this.crossOrigin = this.options.crossOrigin;
 		this.imageUrl = this.options.imageUrl;
-
-		// NEW: Store content clipping options
-		this.contentBounds = this.options.contentBounds;
 
 		// Check if element has valid dimensions
 		const elWidth = this.el.clientWidth;
@@ -283,20 +276,7 @@ class Ripples {
 		canvas.height = elHeight;
 		this.canvas = canvas;
 		this.canvas.style.position = 'absolute';
-
-		// NEW: If content bounds are specified, adjust canvas position and size
-		if (this.contentBounds) {
-			const bounds = this.contentBounds;
-			canvas.style.left = bounds.x + '%';
-			canvas.style.top = bounds.y + '%';
-			canvas.style.width = bounds.width + '%';
-			canvas.style.height = bounds.height + '%';
-			// Recalculate actual canvas dimensions
-			canvas.width = (elWidth * bounds.width) / 100;
-			canvas.height = (elHeight * bounds.height) / 100;
-		} else {
-			this.canvas.style.inset = 0;
-		}
+		this.canvas.style.inset = 0;
 
 		// Ensure canvas has valid dimensions
 		if (canvas.width === 0 || canvas.height === 0) {
@@ -779,32 +759,14 @@ class Ripples {
 			top: elementRect.top + window.pageYOffset
 		};
 
-		// NEW: If content bounds are specified, adjust the texture coordinates
-		if (this.contentBounds) {
-			const bounds = this.contentBounds;
-			const adjustedLeft = elementOffset.left + (this.el.clientWidth * bounds.x) / 100;
-			const adjustedTop = elementOffset.top + (this.el.clientHeight * bounds.y) / 100;
-			const adjustedWidth = (this.el.clientWidth * bounds.width) / 100;
-			const adjustedHeight = (this.el.clientHeight * bounds.height) / 100;
-
-			this.renderProgram.uniforms.topLeft = new Float32Array([
-				(adjustedLeft - backgroundX) / backgroundWidth,
-				(adjustedTop - backgroundY) / backgroundHeight
-			]);
-			this.renderProgram.uniforms.bottomRight = new Float32Array([
-				this.renderProgram.uniforms.topLeft[0] + adjustedWidth / backgroundWidth,
-				this.renderProgram.uniforms.topLeft[1] + adjustedHeight / backgroundHeight
-			]);
-		} else {
-			this.renderProgram.uniforms.topLeft = new Float32Array([
-				(elementOffset.left - backgroundX) / backgroundWidth,
-				(elementOffset.top - backgroundY) / backgroundHeight
-			]);
-			this.renderProgram.uniforms.bottomRight = new Float32Array([
-				this.renderProgram.uniforms.topLeft[0] + this.el.clientWidth / backgroundWidth,
-				this.renderProgram.uniforms.topLeft[1] + this.el.clientHeight / backgroundHeight
-			]);
-		}
+		this.renderProgram.uniforms.topLeft = new Float32Array([
+			(elementOffset.left - backgroundX) / backgroundWidth,
+			(elementOffset.top - backgroundY) / backgroundHeight
+		]);
+		this.renderProgram.uniforms.bottomRight = new Float32Array([
+			this.renderProgram.uniforms.topLeft[0] + this.el.clientWidth / backgroundWidth,
+			this.renderProgram.uniforms.topLeft[1] + this.el.clientHeight / backgroundHeight
+		]);
 
 		const maxSide = Math.max(this.canvas.width, this.canvas.height);
 
@@ -1009,12 +971,8 @@ class Ripples {
 		gl = this.context;
 		if (!gl) return;
 
-		const elWidth = this.contentBounds
-			? (this.el.clientWidth * this.contentBounds.width) / 100
-			: this.el.clientWidth;
-		const elHeight = this.contentBounds
-			? (this.el.clientHeight * this.contentBounds.height) / 100
-			: this.el.clientHeight;
+		const elWidth = this.el.clientWidth;
+		const elHeight = this.el.clientHeight;
 		const longestSide = Math.max(elWidth, elHeight);
 
 		radius = radius / longestSide;
@@ -1040,14 +998,8 @@ class Ripples {
 	}
 
 	updateSize() {
-		let newWidth = this.el.clientWidth;
-		let newHeight = this.el.clientHeight;
-
-		// NEW: Adjust for content bounds if specified
-		if (this.contentBounds) {
-			newWidth = (newWidth * this.contentBounds.width) / 100;
-			newHeight = (newHeight * this.contentBounds.height) / 100;
-		}
+		const newWidth = this.el.clientWidth;
+		const newHeight = this.el.clientHeight;
 
 		if (newWidth !== this.canvas.width || newHeight !== this.canvas.height) {
 			this.canvas.width = newWidth;
@@ -1170,11 +1122,6 @@ class Ripples {
 				this.imageUrl = value;
 				this.options.imageUrl = value;
 				this.loadImage();
-				break;
-			case 'contentBounds':
-				this.contentBounds = value;
-				this.options.contentBounds = value;
-				this.updateSize();
 				break;
 			case 'resolution':
 				console.warn(
