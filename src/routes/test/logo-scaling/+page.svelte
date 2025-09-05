@@ -20,9 +20,9 @@
 			Math.max(2, 2 + ((elementSize - 62) / (800 - 62)) * 21.36)
 		);
 
-		// Wave propagation scaling: 2.0 at 500px down to 0.5 at 125px, clamped at 0.5
+		// Wave propagation scaling: 2.0 at 500px down to 0.2 at 125px, clamped at 0.2
 		const scaledWavePropagation = Math.max(
-			0.5,
+			0.2,
 			Math.min(2.0, 2.0 - ((500 - elementSize) / (500 - 125)) * 1.5)
 		);
 
@@ -111,8 +111,8 @@
 			</div>
 			<div class="algorithm-section">
 				<h4>Wave Propagation Scaling</h4>
-				<p>2.0 at 500px down to 0.5 at 125px (clamped at 0.5)</p>
-				<code>Math.max(0.5, Math.min(2.0, 2.0 - ((500 - size) / (500 - 125)) * 1.5))</code>
+				<p>2.0 at 500px down to 0.2 at 125px (clamped at 0.2)</p>
+				<code>Math.max(0.2, Math.min(2.0, 2.0 - ((500 - size) / (500 - 125)) * 1.5))</code>
 			</div>
 			<div class="algorithm-section">
 				<h4>Resolution Optimization</h4>

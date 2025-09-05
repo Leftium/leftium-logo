@@ -48,10 +48,10 @@
 			Math.max(2, 2 + ((elementSize - 62) / (800 - 62)) * 21.36)
 		);
 
-		// Scale wave propagation based on element size: 2.0 at 500px down to 0.5 at 125px
-		// Linear interpolation for sizes 500px down to 125px, then clamp at 0.5 for smaller
+		// Scale wave propagation based on element size: 2.0 at 500px down to 0.2 at 125px
+		// Linear interpolation for sizes 500px down to 125px, then clamp at 0.2 for smaller
 		const scaledWavePropagation = Math.max(
-			0.5,
+			0.2,
 			Math.min(2.0, 2.0 - ((500 - elementSize) / (500 - 125)) * 1.5)
 		);
 
@@ -113,7 +113,7 @@
 										Math.max(2, 2 + ((currentWidth - 62) / (800 - 62)) * 21.36)
 									);
 									const newScaledWavePropagation = Math.max(
-										0.5,
+										0.2,
 										Math.min(2.0, 2.0 - ((500 - currentWidth) / (500 - 125)) * 1.5)
 									);
 									const newRippleOptions = {
