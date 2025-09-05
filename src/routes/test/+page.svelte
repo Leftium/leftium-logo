@@ -2,6 +2,11 @@
 	// Test pages listing
 	const testPages = [
 		{
+			name: 'Synchronized Animation',
+			path: '/test/synchronized',
+			description: 'NEW! Global synchronized animation state across all LeftiumLogo instances'
+		},
+		{
 			name: 'Logo Scaling Test',
 			path: '/test/logo-scaling',
 			description: 'Compare LeftiumLogo scaling algorithms at different sizes'
@@ -25,11 +30,6 @@
 			name: 'Responsive Tests',
 			path: '/test/responsive',
 			description: 'Test responsiveness across screen sizes'
-		},
-		{
-			name: 'onClick Callback Test',
-			path: '/test/onclick-callback',
-			description: 'Test the new onClick callback functionality'
 		}
 	];
 </script>

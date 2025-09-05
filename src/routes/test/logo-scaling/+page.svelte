@@ -1,5 +1,6 @@
 <script lang="ts">
 	import LeftiumLogo from '$lib/LeftiumLogo.svelte';
+	import { toggleAnimation } from '$lib/LeftiumLogo.svelte';
 	import { onMount } from 'svelte';
 
 	// Logo sizes to test
@@ -63,15 +64,10 @@
 		});
 	}
 
-	// Function to toggle animation on all logos
+	// Function to toggle animation on all logos - now uses global state!
 	function toggleAllAnimations() {
-		document.querySelectorAll('.logo-test-item .ripples').forEach((element) => {
-			if (element instanceof HTMLElement) {
-				// Use shift+click to toggle animation
-				const event = new MouseEvent('click', { shiftKey: true, bubbles: true });
-				element.dispatchEvent(event);
-			}
-		});
+		// Much simpler with global state - no DOM manipulation needed
+		toggleAnimation();
 	}
 
 	onMount(() => {
@@ -168,7 +164,6 @@
 						<LeftiumLogo
 							bind:this={logoRefs[size]}
 							size="{size}px"
-							animated={true}
 							toggleAnimationWithShift={true}
 							boundingBox="square"
 						/>
@@ -211,7 +206,6 @@
 						<LeftiumLogo
 							bind:this={logoRefs[size]}
 							size="{size}px"
-							animated={true}
 							toggleAnimationWithShift={true}
 							boundingBox="square"
 						/>

@@ -7,17 +7,17 @@
 		<h3>Inline Text Alignment</h3>
 		<div class="inline-test">
 			Text before
-			<LeftiumLogo size="30px" animated={false} boundingBox="square" />
+			<LeftiumLogo size="30px" boundingBox="square" />
 			text after (square)
 		</div>
 		<div class="inline-test">
 			Text before
-			<LeftiumLogo size="24px" animated={false} boundingBox="default" />
+			<LeftiumLogo size="24px" boundingBox="default" />
 			text after (default)
 		</div>
 		<div class="inline-test">
 			Text before
-			<LeftiumLogo size="20px" animated={false} boundingBox="encircled" />
+			<LeftiumLogo size="20px" boundingBox="encircled" />
 			text after (encircled)
 		</div>
 	</div>
@@ -28,13 +28,13 @@
 		<h3>Square Bounding Box</h3>
 		<div class="test-row">
 			<div class="layout-box">
-				<LeftiumLogo size="200px" animated={false} boundingBox="square" />
+				<LeftiumLogo size="200px" boundingBox="square" />
 			</div>
 			<div class="layout-box">
-				<LeftiumLogo size="150px" animated={false} boundingBox="square" />
+				<LeftiumLogo size="150px" boundingBox="square" />
 			</div>
 			<div class="layout-box">
-				<LeftiumLogo size="100px" animated={false} boundingBox="square" />
+				<LeftiumLogo size="100px" boundingBox="square" />
 			</div>
 		</div>
 		<p>Red box shows layout bounds matching just the blue square</p>
@@ -44,13 +44,13 @@
 		<h3>Default Bounding Box</h3>
 		<div class="test-row">
 			<div class="layout-box">
-				<LeftiumLogo size="160px" animated={false} boundingBox="default" />
+				<LeftiumLogo size="160px" boundingBox="default" />
 			</div>
 			<div class="layout-box">
-				<LeftiumLogo size="120px" animated={false} boundingBox="default" />
+				<LeftiumLogo size="120px" boundingBox="default" />
 			</div>
 			<div class="layout-box">
-				<LeftiumLogo size="80px" animated={false} boundingBox="default" />
+				<LeftiumLogo size="80px" boundingBox="default" />
 			</div>
 		</div>
 		<p>Red box shows layout bounds at average between square and encircled</p>
@@ -60,13 +60,13 @@
 		<h3>Encircled Bounding Box</h3>
 		<div class="test-row">
 			<div class="layout-box">
-				<LeftiumLogo size="133px" animated={false} boundingBox="encircled" />
+				<LeftiumLogo size="133px" boundingBox="encircled" />
 			</div>
 			<div class="layout-box">
-				<LeftiumLogo size="100px" animated={false} boundingBox="encircled" />
+				<LeftiumLogo size="100px" boundingBox="encircled" />
 			</div>
 			<div class="layout-box">
-				<LeftiumLogo size="66px" animated={false} boundingBox="encircled" />
+				<LeftiumLogo size="66px" boundingBox="encircled" />
 			</div>
 		</div>
 		<p>Red box shows layout bounds for full logo with padding (800x800 canvas)</p>

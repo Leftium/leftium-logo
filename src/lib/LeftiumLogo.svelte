@@ -1,4 +1,35 @@
+<script module>
+	import { dev } from '$app/environment';
+
+	// Simple shared variable - no store needed!
+	let globalAnimated = !dev;
+
+	// Export control functions instead of the variable
+	export function toggleAnimation() {
+		globalAnimated = !globalAnimated;
+		updateAllInstances();
+	}
+
+	export function setAnimated(value: boolean) {
+		globalAnimated = value;
+		updateAllInstances();
+	}
+
+	// Keep track of all instances for updates
+	let instances = new Set<() => void>();
+
+	function updateAllInstances() {
+		instances.forEach((update) => update());
+	}
+
+	export function registerInstance(updateFn: () => void) {
+		instances.add(updateFn);
+		return () => instances.delete(updateFn);
+	}
+</script>
+
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 	import { Ripples, type RipplesOptions } from '$lib/webgl-ripples/webgl-ripples.js';
 
@@ -9,7 +40,6 @@
 
 	interface Props {
 		size?: string;
-		animated?: boolean;
 		toggleAnimationWithShift?: boolean;
 		ripplesOptions?: RipplesOptions;
 		boundingBox?: 'square' | 'default' | 'cropped' | 'encircled';
@@ -20,7 +50,6 @@
 
 	let {
 		size = '100%',
-		animated = true,
 		toggleAnimationWithShift = false,
 		ripplesOptions: ripplesOptionsProp = {},
 		boundingBox = 'default',
@@ -29,9 +58,47 @@
 		...restProps
 	}: Props = $props();
 
+	// Use global animation state shared across ALL instances
+	let animated = $state(globalAnimated);
+
+	// Register for updates from other instances
+	let unregister = registerInstance(() => {
+		animated = globalAnimated;
+	});
+
+	// Clean up on destroy
+	onDestroy(unregister);
+
 	let ripples: Ripples | null;
 	let animatedElements: Element[];
 	let animate: (time: number) => void;
+
+	// Reactive effect to handle animation state changes from global store
+	$effect(() => {
+		if (animated) {
+			// Start animation - only if elements are available
+			if (animatedElements && animate) {
+				for (const el of animatedElements) {
+					(el as HTMLElement).style.transition = '';
+				}
+				requestAnimationFrame(animate);
+			}
+		} else {
+			// Stop animation - only if elements are available
+			if (animatedElements) {
+				if (ripples) {
+					ripples.destroy();
+					ripples = null;
+				}
+
+				// Reset transforms with smooth transition
+				for (const el of animatedElements) {
+					(el as HTMLElement).style.transition = 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+					(el as HTMLElement).style.transform = 'translate(0%, 0%)';
+				}
+			}
+		}
+	});
 
 	const logoAnimation: Attachment = (element) => {
 		animatedElements = [...element.children].filter((child) => child.classList.contains('animate'));
@@ -256,30 +323,9 @@
 			return;
 		}
 
-		animated = !animated;
-
-		if (animated) {
-			// Remove transitions before starting animation
-			for (const el of animatedElements) {
-				(el as HTMLElement).style.transition = '';
-			}
-			// Start animation
-			if (animate) {
-				requestAnimationFrame(animate);
-			}
-		} else {
-			// Stop animation - destroy ripples and reset transforms
-			if (ripples) {
-				ripples.destroy();
-				ripples = null;
-			}
-
-			// Reset transforms with smooth transition
-			for (const el of animatedElements) {
-				(el as HTMLElement).style.transition = 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
-				(el as HTMLElement).style.transform = 'translate(0%, 0%)';
-			}
-		}
+		// Update global state - affects ALL LeftiumLogo instances immediately
+		// The reactive effect above will handle the animation start/stop logic
+		toggleAnimation();
 	}
 </script>
 

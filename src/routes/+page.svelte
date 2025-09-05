@@ -1,7 +1,10 @@
 <script lang="ts">
 	import LeftiumLogo from '$lib/LeftiumLogo.svelte';
-
+	import { setAnimated } from '$lib/LeftiumLogo.svelte';
 	let boundingBox: 'square' | 'default' | 'encircled' | 'cropped' = $state('default');
+
+	// Start animated on main page
+	setAnimated(true);
 </script>
 
 <center>

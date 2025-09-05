@@ -8,17 +8,17 @@
 	<div class="test-section">
 		<h3>100% width in non-square containers</h3>
 		<div class="container wide">
-			<LeftiumLogo size="100%" animated={false} boundingBox="square" />
+			<LeftiumLogo size="100%" boundingBox="square" />
 			<div class="label">Wide container (400x200px) - Logo stays square</div>
 		</div>
 
 		<div class="container tall">
-			<LeftiumLogo size="100%" animated={false} boundingBox="square" />
+			<LeftiumLogo size="100%" boundingBox="square" />
 			<div class="label">Tall container (200x400px) - Logo stays square</div>
 		</div>
 
 		<div class="container square">
-			<LeftiumLogo size="100%" animated={false} boundingBox="square" />
+			<LeftiumLogo size="100%" boundingBox="square" />
 			<div class="label">Square container (300x300px) - Perfect fit</div>
 		</div>
 	</div>
@@ -26,17 +26,17 @@
 	<div class="test-section">
 		<h3>Different bounding boxes at 100%</h3>
 		<div class="container medium">
-			<LeftiumLogo size="100%" animated={false} boundingBox="square" />
+			<LeftiumLogo size="100%" boundingBox="square" />
 			<div class="label">Square bounding</div>
 		</div>
 
 		<div class="container medium">
-			<LeftiumLogo size="100%" animated={false} boundingBox="default" />
+			<LeftiumLogo size="100%" boundingBox="default" />
 			<div class="label">Default bounding</div>
 		</div>
 
 		<div class="container medium">
-			<LeftiumLogo size="100%" animated={false} boundingBox="encircled" />
+			<LeftiumLogo size="100%" boundingBox="encircled" />
 			<div class="label">Encircled bounding</div>
 		</div>
 	</div>
