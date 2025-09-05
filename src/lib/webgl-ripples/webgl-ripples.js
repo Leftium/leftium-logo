@@ -491,17 +491,27 @@ class Ripples {
 
 	// Set up pointer (mouse + touch) events
 	setupPointerEvents() {
+		// Calculate scaled strength for movement based on element size
+		const getMovementStrength = () => {
+			const currentSize = Math.max(this.el.clientWidth, this.el.clientHeight);
+			// For small sizes, use stronger movement ripples for visibility
+			const baseStrength = 0.01;
+			const scaleFactor = Math.max(1, 150 / currentSize); // Boost strength for sizes under 150px
+			return Math.min(0.04, baseStrength * scaleFactor); // Cap at 0.04 to avoid overwhelming
+		};
+
 		const dropAtPointerMouseMove = (e) => {
 			if (this.visible && this.running && this.interactive) {
-				this.dropAtPointer(e, this.dropRadius * 1, 0.01);
+				this.dropAtPointer(e, this.dropRadius * 1, getMovementStrength());
 			}
 		};
 
 		const dropAtPointerTouch = (e) => {
 			if (this.visible && this.running && this.interactive) {
 				const touches = e.changedTouches;
+				const movementStrength = getMovementStrength();
 				for (let i = 0; i < touches.length; i++) {
-					this.dropAtPointer(touches[i], this.dropRadius * 1, 0.01);
+					this.dropAtPointer(touches[i], this.dropRadius * 1, movementStrength);
 				}
 			}
 		};

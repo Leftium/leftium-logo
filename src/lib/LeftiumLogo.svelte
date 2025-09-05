@@ -170,9 +170,10 @@
 						20,
 						Math.max(2, 2 + ((currentSize - 62) / (800 - 62)) * 21.36)
 					);
-					// Scale strength based on size - gentler ripples for smaller logos
-					const sizeFactor = Math.min(1, currentSize / 200);
-					const strength = (0.1 + Math.random() * 0.04) * sizeFactor;
+					// Scale strength based on size - ensure minimum visibility for small sizes
+					const sizeFactor = Math.max(0.7, Math.min(1, currentSize / 200)); // Never below 70%
+					const baseStrength = 0.1 + Math.random() * 0.04;
+					const strength = Math.max(0.08, baseStrength * sizeFactor); // Minimum 0.08 for visibility
 					ripples.drop(x, y, autoDropRadius, strength);
 				}
 			}
