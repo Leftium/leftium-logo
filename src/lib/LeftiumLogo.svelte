@@ -143,8 +143,54 @@
 		let lastWidth = ripplesElement?.offsetWidth;
 		let lastHeight = ripplesElement?.offsetHeight;
 		let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
+		let hasExecutedLeading = $state(false);
 
-		// Reactive effect to handle dimension changes
+		// Extract ripples recreation logic for reuse
+		function recreateRipples(currentWidth: number) {
+			if (animated && ripplesElement) {
+				// Destroy old instance first
+				if (ripples) {
+					try {
+						ripples.destroy();
+					} catch (e) {
+						console.error('Error destroying ripples:', e);
+					}
+					ripples = null;
+				}
+
+				// Wait a frame before creating new instance to ensure cleanup
+				requestAnimationFrame(() => {
+					if (!ripples && animated && ripplesElement) {
+						// Higher resolution for smaller sizes to avoid blurriness
+						const newResolution = Math.min(512, Math.max(128, currentWidth * 0.8));
+						// Scale drop radius and wave propagation for new size
+						// Linear interpolation from 62px:2px to 800px:23.36px, capped at 20px
+						const newScaledDropRadius = Math.min(
+							20,
+							Math.max(2, 2 + ((currentWidth - 62) / (800 - 62)) * 21.36)
+						);
+						const newScaledWavePropagation = Math.max(
+							0.2,
+							Math.min(2.0, 2.0 - ((500 - currentWidth) / (500 - 125)) * 1.5)
+						);
+						const newRippleOptions = {
+							...rippleOptions,
+							resolution: newResolution,
+							dropRadius: newScaledDropRadius,
+							wavePropagation: newScaledWavePropagation
+						};
+
+						try {
+							ripples = new Ripples(ripplesElement, newRippleOptions);
+						} catch (e) {
+							console.error('Error creating ripples:', e);
+						}
+					}
+				});
+			}
+		}
+
+		// Reactive effect to handle dimension changes with leading + trailing edge debouncing
 		$effect(() => {
 			if (ripplesWidth && ripplesHeight && animated && ripplesElement) {
 				const currentWidth = ripplesWidth;
@@ -158,53 +204,20 @@
 					lastWidth = currentWidth;
 					lastHeight = currentHeight;
 
-					// Debounce the recreation to avoid too many WebGL contexts
+					// LEADING EDGE: Execute immediately on first change in sequence
+					if (!hasExecutedLeading) {
+						hasExecutedLeading = true;
+						recreateRipples(currentWidth);
+					}
+
+					// TRAILING EDGE: Debounced execution to handle rapid changes
 					if (resizeTimeout) {
 						clearTimeout(resizeTimeout);
 					}
 
 					resizeTimeout = setTimeout(() => {
-						if (animated && ripplesElement) {
-							// Destroy old instance first
-							if (ripples) {
-								try {
-									ripples.destroy();
-								} catch (e) {
-									console.error('Error destroying ripples:', e);
-								}
-								ripples = null;
-							}
-
-							// Wait a frame before creating new instance to ensure cleanup
-							requestAnimationFrame(() => {
-								if (!ripples && animated && ripplesElement) {
-									// Higher resolution for smaller sizes to avoid blurriness
-									const newResolution = Math.min(512, Math.max(128, currentWidth * 0.8));
-									// Scale drop radius and wave propagation for new size
-									// Linear interpolation from 62px:2px to 800px:23.36px, capped at 20px
-									const newScaledDropRadius = Math.min(
-										20,
-										Math.max(2, 2 + ((currentWidth - 62) / (800 - 62)) * 21.36)
-									);
-									const newScaledWavePropagation = Math.max(
-										0.2,
-										Math.min(2.0, 2.0 - ((500 - currentWidth) / (500 - 125)) * 1.5)
-									);
-									const newRippleOptions = {
-										...rippleOptions,
-										resolution: newResolution,
-										dropRadius: newScaledDropRadius,
-										wavePropagation: newScaledWavePropagation
-									};
-
-									try {
-										ripples = new Ripples(ripplesElement, newRippleOptions);
-									} catch (e) {
-										console.error('Error creating ripples:', e);
-									}
-								}
-							});
-						}
+						recreateRipples(currentWidth);
+						hasExecutedLeading = false; // Reset for next change sequence
 					}, 100); // 100ms debounce
 				}
 			}
@@ -305,6 +318,7 @@
 					console.error('Error destroying ripples on cleanup:', e);
 				}
 			}
+			hasExecutedLeading = false; // Reset leading edge state
 		};
 	};
 
