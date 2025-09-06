@@ -12,7 +12,11 @@ const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url));
 export default ts.config(
 	includeIgnoreFile(gitignorePath),
 	{
-		ignores: ['src/lib/webgl-ripples/webgl-ripples-original.js']
+		ignores: [
+			'src/lib/webgl-ripples/webgl-ripples-original.js',
+			'src/routes/test/ripples-original/+page.svelte',
+			'src/routes/test/ripples-tuning/+page.svelte'
+		]
 	},
 	js.configs.recommended,
 	...ts.configs.recommended,
