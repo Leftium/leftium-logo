@@ -404,21 +404,6 @@
 		overflow: visible;
 	}
 
-	/* Square mode - square container */
-	logo-container.square {
-		aspect-ratio: 1;
-	}
-
-	/* Default mode - square container */
-	logo-container.default {
-		aspect-ratio: 1;
-	}
-
-	/* Encircled mode - square container */
-	logo-container.encircled {
-		aspect-ratio: 1;
-	}
-
 	/* Cropped mode - match ellipse aspect ratio: 723.08875/812.58868 ≈ 0.8906 */
 	logo-container.cropped {
 		aspect-ratio: 0.8906;
