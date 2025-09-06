@@ -93,7 +93,6 @@
 				style:background-image={`url("${logoSquare}")`}
 			></div>
 			<button onclick={dropModified}>Manual Drop</button>
-			<div class="status">✅ Working</div>
 		</div>
 
 		<div class="test-section">
@@ -105,7 +104,6 @@
 				style:background-image={`url("${logoSquare}")`}
 			></div>
 			<button onclick={dropOriginal}>Manual Drop</button>
-			<div class="status" id="original-status">⏳ Loading...</div>
 		</div>
 	</div>
 
@@ -113,14 +111,16 @@
 		<h3>Test Details:</h3>
 		<ul>
 			<li>Left: Modified ES module version with SSR safety and transparent border handling</li>
-			<li>Right: Completely unmodified main.js loaded via script tag</li>
-			<li>Both use the same configuration (resolution: 256, dropRadius: 20, perturbance: 0.03)</li>
-			<li>Check browser console for any errors from the original version</li>
+			<li>Right: Original unmodified main.js loaded via script tag</li>
+			<li>Both use the same configuration (resolution: 512, dropRadius: 20, perturbance: 0.04)</li>
+			<li>Both read from the same SVG background (square.svg with merged gradient)</li>
+			<li>Click "Manual Drop" to trigger ripple effects at center</li>
 		</ul>
 
 		<div class="note">
-			<strong>Note:</strong> The original main.js uses global variables and direct DOM manipulation.
-			It may have issues with modern build tools and SSR environments.
+			<strong>Fixed:</strong> The SVG gradient has been merged to eliminate 404 errors while maintaining
+			identical visual appearance. The original library uses global variables and direct DOM manipulation,
+			which may have compatibility issues with modern build tools.
 		</div>
 	</div>
 </div>
@@ -131,60 +131,109 @@
 	}
 
 	.demo-container {
-		padding: 40px;
+		padding: 20px 15px;
 		font-family: sans-serif;
-		max-width: 1200px;
+		max-width: 100%;
 		margin: 0 auto;
 	}
 
 	h1 {
 		text-align: center;
 		color: #333;
+		font-size: 1.5rem;
+		margin-bottom: 20px;
 	}
 
 	.comparison {
 		display: flex;
-		gap: 60px;
+		flex-direction: column;
+		gap: 30px;
 		justify-content: center;
-		margin: 40px 0;
-		flex-wrap: wrap;
+		margin: 20px 0;
+		align-items: center;
 	}
 
 	.test-section {
 		text-align: center;
 		position: relative;
+		width: 100%;
+		max-width: 320px;
 	}
 
 	.test-section h2 {
 		color: #444;
-		margin-bottom: 10px;
+		margin-bottom: 8px;
+		font-size: 1.1rem;
 	}
 
 	.test-section p {
 		color: #666;
-		margin-bottom: 20px;
-		font-size: 14px;
+		margin-bottom: 15px;
+		font-size: 13px;
 	}
 
 	.ripple-container {
-		width: 400px;
-		height: 400px;
+		width: 100%;
+		max-width: 280px;
+		height: 280px;
 		background-size: contain;
 		background-position: center;
 		background-repeat: no-repeat;
 		border: 2px solid #ddd;
 		position: relative;
-		margin-bottom: 20px;
+		margin: 0 auto 15px auto;
+	}
+
+	/* Desktop styles */
+	@media (min-width: 768px) {
+		.demo-container {
+			padding: 40px;
+			max-width: 1200px;
+		}
+
+		h1 {
+			font-size: 2rem;
+			margin-bottom: 30px;
+		}
+
+		.comparison {
+			flex-direction: row;
+			gap: 60px;
+			margin: 40px 0;
+		}
+
+		.test-section {
+			max-width: none;
+		}
+
+		.test-section h2 {
+			font-size: 1.5rem;
+			margin-bottom: 10px;
+		}
+
+		.test-section p {
+			font-size: 14px;
+			margin-bottom: 20px;
+		}
+
+		.ripple-container {
+			width: 400px;
+			height: 400px;
+			max-width: none;
+			margin: 0 auto 20px auto;
+		}
 	}
 
 	button {
-		padding: 10px 20px;
+		padding: 12px 24px;
 		background: #0066cc;
 		color: white;
 		border: none;
 		border-radius: 4px;
 		cursor: pointer;
 		font-size: 14px;
+		touch-action: manipulation;
+		min-height: 44px;
 	}
 
 	button:hover {
@@ -195,32 +244,60 @@
 		transform: translateY(1px);
 	}
 
-	.status {
-		margin-top: 10px;
-		font-weight: bold;
-		color: #28a745;
-	}
-
 	.instructions {
 		background: #f5f5f5;
-		padding: 20px;
+		padding: 15px;
 		border-radius: 8px;
-		margin-top: 40px;
+		margin-top: 30px;
+		font-size: 14px;
+	}
+
+	@media (min-width: 768px) {
+		button {
+			padding: 10px 20px;
+			min-height: auto;
+		}
+
+		.instructions {
+			padding: 20px;
+			margin-top: 40px;
+			font-size: inherit;
+		}
 	}
 
 	.instructions h3 {
 		margin-top: 0;
 		color: #333;
+		font-size: 1rem;
 	}
 
 	.instructions ul {
-		margin: 10px 0;
-		padding-left: 20px;
+		margin: 8px 0;
+		padding-left: 16px;
 	}
 
 	.instructions li {
-		margin: 5px 0;
+		margin: 4px 0;
 		color: #555;
+		font-size: 13px;
+		line-height: 1.4;
+	}
+
+	@media (min-width: 768px) {
+		.instructions h3 {
+			font-size: 1.2rem;
+		}
+
+		.instructions ul {
+			margin: 10px 0;
+			padding-left: 20px;
+		}
+
+		.instructions li {
+			margin: 5px 0;
+			font-size: 14px;
+			line-height: 1.5;
+		}
 	}
 
 	.note {

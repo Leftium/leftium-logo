@@ -29,12 +29,14 @@
 
 		// Calculate percentages for comparison
 		const dropRadiusPercent = ((scaledDropRadius / elementSize) * 100).toFixed(1);
+		const wavePercent = ((scaledWavePropagation / 2.0) * 100).toFixed(1);
 
 		return {
 			resolution,
 			dropRadius: scaledDropRadius,
 			wavePropagation: scaledWavePropagation,
-			dropRadiusPercent
+			dropRadiusPercent,
+			wavePercent
 		};
 	}
 
@@ -119,23 +121,25 @@
 	</div>
 
 	<div class="controls">
-		<button on:click={triggerManualDrop} class="control-btn"> Manual Drop All </button>
-		<button on:click={toggleAllAnimations} class="control-btn"> Toggle All Animations </button>
+		<button class="control-btn" on:click={triggerManualDrop}>Manual Drop All</button>
+		<button class="control-btn" on:click={toggleAllAnimations}>Toggle All Animations</button>
+
 		<label class="checkbox-label">
 			<input type="checkbox" bind:checked={showScalingInfo} />
-			Show Scaling Parameters
+			Show Scaling Info
 		</label>
+
 		<label class="checkbox-label">
 			<input type="checkbox" bind:checked={showLigature} />
 			Show Ligature
 		</label>
 	</div>
 
-	<!-- Smaller logos in grid -->
+	<!-- Main logo grid -->
 	<div class="logo-grid">
 		{#each logoSizes.slice(0, -1) as size}
 			{@const scalingParams = calculateScalingParams(size)}
-			<div class="logo-test-item">
+			<div class="logo-test-item {size >= 400 ? 'large-size' : 'small-size'}">
 				<div class="logo-content">
 					<div class="logo-info">
 						<div class="size-label">{size}px</div>
@@ -153,8 +157,8 @@
 									>
 								</div>
 								<div class="param-row">
-									<span class="param-label">Wave Speed:</span>
-									<span class="param-value">{scalingParams.wavePropagation.toFixed(1)}</span>
+									<span class="param-label">Wave Propagation:</span>
+									<span class="param-value">{scalingParams.wavePropagation.toFixed(1)}x</span>
 								</div>
 							</div>
 						{/if}
@@ -195,8 +199,8 @@
 									>
 								</div>
 								<div class="param-row">
-									<span class="param-label">Wave Speed:</span>
-									<span class="param-value">{scalingParams.wavePropagation.toFixed(1)}</span>
+									<span class="param-label">Wave Propagation:</span>
+									<span class="param-value">{scalingParams.wavePropagation.toFixed(1)}x</span>
 								</div>
 							</div>
 						{/if}
@@ -280,7 +284,7 @@
 
 	.large-logo-row {
 		display: flex;
-		justify-content: flex-start;
+		justify-content: center;
 		margin-bottom: 40px;
 		padding: 0;
 	}
@@ -298,31 +302,34 @@
 	.logo-test-item {
 		display: flex;
 		flex-direction: column;
-		align-items: center;
+		align-items: stretch;
 		padding: 20px;
 		border: 2px solid #e0e0e0;
 		border-radius: 8px;
 		background: #fafafa;
 		width: 100%;
 		max-width: 800px;
-		margin: 0;
+		margin: 0 auto;
 		overflow: visible;
+		box-sizing: border-box;
 	}
 
 	.logo-test-item.large {
-		max-width: 1200px;
+		max-width: 800px;
 	}
 
 	.logo-content {
 		display: flex;
-		align-items: center;
-		gap: 30px;
+		align-items: flex-start;
+		gap: 20px;
 		width: 100%;
+		overflow: visible;
 	}
 
 	.logo-info {
 		flex-shrink: 0;
-		width: 200px;
+		min-width: 180px;
+		max-width: 220px;
 		display: flex;
 		flex-direction: column;
 		gap: 15px;
@@ -336,14 +343,22 @@
 	}
 
 	.logo-wrapper {
-		flex-shrink: 0;
+		flex: 1;
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		overflow: hidden;
+		overflow: visible;
 		padding: 10px;
 		position: relative;
 		border-radius: 8px;
+		min-width: 0; /* Allows flex item to shrink below content size */
+	}
+
+	/* Left-align logos at wider breakpoints for horizontal layout */
+	@media (min-width: 769px) {
+		.logo-wrapper {
+			justify-content: flex-start;
+		}
 	}
 
 	/* Hide the ligature element when checkbox is checked */
@@ -362,7 +377,8 @@
 		border-radius: 4px;
 		padding: 12px;
 		font-size: 12px;
-		width: 100%;
+		width: fit-content;
+		max-width: 100%;
 	}
 
 	.param-row {
@@ -475,6 +491,14 @@
 			padding: 0 10px;
 		}
 
+		/* Hide large logos when they won't fit to prevent horizontal scrolling */
+		@media (max-width: 440px) {
+			.logo-test-item.large-size,
+			.large-logo-row {
+				display: none;
+			}
+		}
+
 		@media (max-width: 768px) {
 			.controls {
 				flex-direction: column;
@@ -533,12 +557,19 @@
 		.logo-content {
 			flex-direction: column;
 			gap: 20px;
+			align-items: center;
 		}
 
 		.logo-info {
 			min-width: auto;
-			width: 100%;
+			max-width: 100%;
+			width: auto;
 			text-align: center;
+		}
+
+		.scaling-info {
+			width: 100%;
+			max-width: 300px;
 		}
 
 		.size-label {

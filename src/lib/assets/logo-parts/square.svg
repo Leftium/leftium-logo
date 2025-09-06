@@ -13,7 +13,6 @@
   <defs
      id="defs1">
     <linearGradient
-       xlink:href="#linearGradient1"
        id="linearGradient2"
        x1="-13953.743"
        y1="20745.297"
@@ -21,9 +20,7 @@
        y2="19945.293"
        gradientUnits="userSpaceOnUse"
        spreadMethod="pad"
-       gradientTransform="translate(14110.759,-19779.355)" />
-    <linearGradient
-       id="linearGradient1">
+       gradientTransform="translate(14110.759,-19779.355)">
       <stop
          style="stop-color:#0029c1;stop-opacity:1;"
          offset="0"

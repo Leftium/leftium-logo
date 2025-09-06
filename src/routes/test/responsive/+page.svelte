@@ -101,4 +101,11 @@
 		color: #333;
 		margin-bottom: 10px;
 	}
+
+	/* Hide wide container when it won't fit to prevent horizontal scrolling */
+	@media (max-width: 440px) {
+		.container.wide {
+			display: none;
+		}
+	}
 </style>

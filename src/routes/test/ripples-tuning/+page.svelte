@@ -513,4 +513,12 @@
 	.manual-btn:hover {
 		background: #5a2d91;
 	}
+
+	/* Hide 500px logo when it won't fit to prevent horizontal scrolling */
+	@media (max-width: 540px) {
+		.ripple-container.large,
+		.ripple-container.large + .size-label {
+			display: none;
+		}
+	}
 </style>

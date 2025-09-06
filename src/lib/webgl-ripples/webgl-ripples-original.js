@@ -335,15 +335,15 @@
 		// This fixes the issue where originalCssBackgroundImage is null when loadImage is called
 		if (this.element.style.backgroundImage && this.element.style.backgroundImage !== 'none') {
 			this.originalCssBackgroundImage = this.element.style.backgroundImage;
-			console.log('[Ripples Original] Found CSS background:', this.originalCssBackgroundImage);
+			// console.log('[Ripples Original] Found CSS background:', this.originalCssBackgroundImage);
 		}
 
 		// Load the image either from the options or CSS rules
-		console.log('[Ripples Original] Loading image...', {
-			imageUrl: this.imageUrl,
-			cssBackground: this.element.style.backgroundImage,
-			originalCss: this.originalCssBackgroundImage
-		});
+		// console.log('[Ripples Original] Loading image...', {
+		// 	imageUrl: this.imageUrl,
+		// 	cssBackground: this.element.style.backgroundImage,
+		// 	originalCss: this.originalCssBackgroundImage
+		// });
 		this.loadImage();
 
 		// Set correct clear color and blend mode (regular alpha blending)
@@ -431,16 +431,16 @@
 				extractUrl(this.originalCssBackgroundImage) ||
 				extractUrl(this.element.style.backgroundImage);
 
-			console.log('[Ripples Original] loadImage called:', {
-				imageUrl: this.imageUrl,
-				originalCss: this.originalCssBackgroundImage,
-				currentCss: this.element.style.backgroundImage,
-				extractedSource: newImageSource
-			});
+			// console.log('[Ripples Original] loadImage called:', {
+			// 	imageUrl: this.imageUrl,
+			// 	originalCss: this.originalCssBackgroundImage,
+			// 	currentCss: this.element.style.backgroundImage,
+			// 	extractedSource: newImageSource
+			// });
 
 			// If image source is unchanged, don't reload it.
 			if (newImageSource == this.imageSource) {
-				console.log('[Ripples Original] Image source unchanged, skipping');
+				// console.log('[Ripples Original] Image source unchanged, skipping');
 				return;
 			}
 
@@ -448,22 +448,22 @@
 
 			// Falsy source means no background.
 			if (!this.imageSource) {
-				console.log('[Ripples Original] No image source, setting transparent texture');
+				// console.log('[Ripples Original] No image source, setting transparent texture');
 				this.setTransparentTexture();
 				return;
 			}
 
 			// Load the texture from a new image.
 			var image = new Image();
-			console.log('[Ripples Original] Creating image with source:', this.imageSource);
+			// console.log('[Ripples Original] Creating image with source:', this.imageSource);
 
 			image.onload = function () {
-				console.log(
-					'[Ripples Original] Image loaded successfully:',
-					image.width,
-					'x',
-					image.height
-				);
+				// console.log(
+				// 	'[Ripples Original] Image loaded successfully:',
+				// 	image.width,
+				// 	'x',
+				// 	image.height
+				// );
 				gl = that.context;
 
 				// Only textures with dimensions of powers of two can have repeat wrapping.
@@ -484,12 +484,12 @@
 
 				// Hide the background that we're replacing.
 				that.hideCssBackground();
-				console.log('[Ripples Original] Background texture set');
+				// console.log('[Ripples Original] Background texture set');
 			};
 
 			// Fall back to a transparent texture when loading the image failed.
 			image.onerror = function (e) {
-				console.error('[Ripples Original] Image load failed:', e, that.imageSource);
+				// console.error('[Ripples Original] Image load failed:', e, that.imageSource);
 				gl = that.context;
 
 				that.setTransparentTexture();
@@ -542,7 +542,7 @@
 
 			// Debug: Check if background texture exists
 			if (!this.backgroundTexture) {
-				console.error('[Ripples Original] No background texture!');
+				// console.error('[Ripples Original] No background texture!');
 				return;
 			}
 
@@ -551,15 +551,15 @@
 
 			// Debug: Check if uniforms are properly set
 			if (!this.renderProgram.uniforms.topLeft) {
-				console.warn('[Ripples Original] topLeft uniform not set!');
+				// console.warn('[Ripples Original] topLeft uniform not set!');
 				this.renderProgram.uniforms.topLeft = new Float32Array([0, 0]);
 			}
 			if (!this.renderProgram.uniforms.bottomRight) {
-				console.warn('[Ripples Original] bottomRight uniform not set!');
+				// console.warn('[Ripples Original] bottomRight uniform not set!');
 				this.renderProgram.uniforms.bottomRight = new Float32Array([1, 1]);
 			}
 			if (!this.renderProgram.uniforms.containerRatio) {
-				console.warn('[Ripples Original] containerRatio uniform not set!');
+				// console.warn('[Ripples Original] containerRatio uniform not set!');
 				this.renderProgram.uniforms.containerRatio = new Float32Array([1, 1]);
 			}
 
@@ -600,7 +600,7 @@
 		computeTextureBoundaries: function () {
 			// Skip if we don't have background dimensions yet
 			if (!this.backgroundWidth || !this.backgroundHeight) {
-				console.log('[Ripples Original] No background dimensions yet');
+				// console.log('[Ripples Original] No background dimensions yet');
 				// Set default uniforms so rendering doesn't fail
 				if (this.renderProgram && !this.renderProgram.uniforms.topLeft) {
 					this.renderProgram.uniforms.topLeft = new Float32Array([0, 0]);
@@ -614,13 +614,13 @@
 			var backgroundAttachment = this.element.style.backgroundAttachment;
 			var backgroundPosition = translateBackgroundPosition(this.element.style.backgroundPosition);
 
-			console.log('[Ripples Original] Computing texture boundaries:', {
-				bgWidth: this.backgroundWidth,
-				bgHeight: this.backgroundHeight,
-				bgSize: backgroundSize,
-				bgAttachment: backgroundAttachment,
-				bgPosition: backgroundPosition
-			});
+			// console.log('[Ripples Original] Computing texture boundaries:', {
+			// 	bgWidth: this.backgroundWidth,
+			// 	bgHeight: this.backgroundHeight,
+			// 	bgSize: backgroundSize,
+			// 	bgAttachment: backgroundAttachment,
+			// 	bgPosition: backgroundPosition
+			// });
 
 			// Here the 'container' is the element which the background adapts to
 			// (either the chrome window or some element, depending on attachment)
@@ -855,7 +855,7 @@
 				this.renderProgram.uniforms.topLeft = new Float32Array([0, 0]);
 				this.renderProgram.uniforms.bottomRight = new Float32Array([1, 1]);
 				this.renderProgram.uniforms.containerRatio = new Float32Array([1, 1]);
-				console.log('[Ripples Original] Initialized default uniforms');
+				// console.log('[Ripples Original] Initialized default uniforms');
 			}
 		},
 

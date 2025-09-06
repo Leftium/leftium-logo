@@ -388,5 +388,51 @@
 		.test-container {
 			padding: 15px;
 		}
+
+		.logo-section {
+			padding: 15px;
+		}
+
+		.size-demos,
+		.bounding-demos {
+			gap: 20px;
+		}
+
+		.callback-demos {
+			gap: 20px;
+		}
+
+		.logo-grid {
+			gap: 30px;
+		}
+	}
+
+	/* Mobile-specific adjustments for very small screens */
+	@media (max-width: 480px) {
+		.test-container {
+			padding: 10px;
+		}
+
+		.logo-section {
+			padding: 10px;
+		}
+
+		.size-demos,
+		.bounding-demos,
+		.callback-demos {
+			gap: 15px;
+		}
+
+		.logo-item {
+			padding: 10px;
+		}
+
+		.global-controls {
+			padding: 15px;
+		}
+
+		.instructions {
+			padding: 15px;
+		}
 	}
 </style>
