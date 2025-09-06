@@ -402,11 +402,48 @@
 		-moz-user-select: none;
 		-ms-user-select: none;
 		overflow: visible;
-	}
 
-	/* Cropped mode - match ellipse aspect ratio: 723.08875/812.58868 ≈ 0.8906 */
-	logo-container.cropped {
-		aspect-ratio: 0.8906;
+		/* Cropped mode - match ellipse aspect ratio: 723.08875/812.58868 ≈ 0.8906 */
+		&.cropped {
+			aspect-ratio: 0.8906;
+		}
+
+		/* Square bounding box mode - grid fills the container */
+		&.square grid-logo {
+			width: 100%;
+			left: 0;
+			top: 0;
+		}
+
+		/* Default bounding box mode - grid is scaled down to leave some padding */
+		&.default grid-logo {
+			/* Grid is 1/1.2519 = 79.88% of container to account for padding */
+			width: calc(100% / 1.2519);
+			/* Center within container */
+			left: calc((100% - 100% / 1.2519) / 2);
+			top: calc((100% - 100% / 1.2519) / 2);
+		}
+
+		/* Encircled bounding box mode - grid is scaled down more to leave full padding */
+		&.encircled grid-logo {
+			/* Grid is 1/1.5037 = 66.5% of container (532/800) */
+			width: calc(100% / 1.5037);
+			/* Center within container */
+			left: calc((100% - 100% / 1.5037) / 2);
+			top: calc((100% - 100% / 1.5037) / 2);
+		}
+
+		/* Cropped bounding box mode - grid scaled and positioned to match reference SVG */
+		&.cropped grid-logo {
+			/* Square is 1131.371px in a 1447px wide container = 78.2% */
+			width: 78.2%;
+			/* Position calculations from SVG transforms */
+			/* Final square position after transforms: x=122.18, y=247.73 */
+			/* Left offset: 122.18/1447 = 8.44% */
+			left: 8.44%;
+			/* Top offset: 247.73/1626.9 = 15.23% */
+			top: 15.23%;
+		}
 	}
 
 	/* Grid that holds all the logo elements */
@@ -421,51 +458,14 @@
 			/* Prevent PicoCSS styles. */
 			max-width: unset !important;
 		}
-	}
 
-	/* Square bounding box mode - grid fills the container */
-	logo-container.square grid-logo {
-		width: 100%;
-		left: 0;
-		top: 0;
-	}
-
-	/* Default bounding box mode - grid is scaled down to leave some padding */
-	logo-container.default grid-logo {
-		/* Grid is 1/1.2519 = 79.88% of container to account for padding */
-		width: calc(100% / 1.2519);
-		/* Center within container */
-		left: calc((100% - 100% / 1.2519) / 2);
-		top: calc((100% - 100% / 1.2519) / 2);
-	}
-
-	/* Encircled bounding box mode - grid is scaled down more to leave full padding */
-	logo-container.encircled grid-logo {
-		/* Grid is 1/1.5037 = 66.5% of container (532/800) */
-		width: calc(100% / 1.5037);
-		/* Center within container */
-		left: calc((100% - 100% / 1.5037) / 2);
-		top: calc((100% - 100% / 1.5037) / 2);
-	}
-
-	/* Cropped bounding box mode - grid scaled and positioned to match reference SVG */
-	logo-container.cropped grid-logo {
-		/* Square is 1131.371px in a 1447px wide container = 78.2% */
-		width: 78.2%;
-		/* Position calculations from SVG transforms */
-		/* Final square position after transforms: x=122.18, y=247.73 */
-		/* Left offset: 122.18/1447 = 8.44% */
-		left: 8.44%;
-		/* Top offset: 247.73/1626.9 = 15.23% */
-		top: 15.23%;
-	}
-
-	/* Individual logo elements positioned relative to the square */
-	grid-logo > * {
-		position: absolute;
-		grid-column: 1 / 2;
-		grid-row: 1 / 2;
-		will-change: auto;
+		/* Individual logo elements positioned relative to the square */
+		> * {
+			position: absolute;
+			grid-column: 1 / 2;
+			grid-row: 1 / 2;
+			will-change: auto;
+		}
 	}
 
 	/* Square image - base element at 532x532 */
@@ -485,10 +485,10 @@
 		border-radius: 0 !important;
 		outline: none !important;
 		box-shadow: none !important;
-	}
 
-	.ripples.square:focus {
-		outline: none;
+		&:focus {
+			outline: none;
+		}
 	}
 
 	/* Glow - 647x647, centered on square */
