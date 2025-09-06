@@ -28,7 +28,7 @@
 		</label>
 	</div>
 	<div>
-		Explore the <a href="/test">test/demo pages</a> and
+		Explore the <a href="/test">test/demos</a> and
 		<a href="https://github.com/Leftium/leftium-logo">source code</a>!
 	</div>
 
