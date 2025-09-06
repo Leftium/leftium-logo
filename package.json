@@ -1,6 +1,6 @@
 {
-	"name": "@leftium/leftium-logo",
-	"version": "0.0.12",
+	"name": "@leftium/logo",
+	"version": "0.0.1",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
