@@ -39,7 +39,7 @@
 	<p>Explore different test pages for the Leftium Logo component:</p>
 
 	<div class="test-grid">
-		{#each testPages as page}
+		{#each testPages as page (page.path)}
 			<a href={page.path} class="test-card">
 				<h2>{page.name}</h2>
 				<p>{page.description}</p>

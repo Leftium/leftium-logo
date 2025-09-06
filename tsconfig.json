@@ -11,5 +11,10 @@
 		"strict": true,
 		"module": "NodeNext",
 		"moduleResolution": "NodeNext"
-	}
+	},
+	"exclude": [
+		"src/lib/webgl-ripples/webgl-ripples-original.js",
+		"src/routes/test/ripples-original/+page.svelte",
+		"src/routes/test/ripples-tuning/+page.svelte"
+	]
 }

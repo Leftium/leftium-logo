@@ -13,7 +13,7 @@ export declare class Ripples {
 	destroy(): void;
 	pause(): void;
 	play(): void;
-	set(property: string, value: any): void;
+	set(property: string, value: unknown): void;
 	updateSize(): void;
 }
 

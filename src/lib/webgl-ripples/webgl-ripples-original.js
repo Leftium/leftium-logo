@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * jQuery Ripples plugin v0.0.1 / https://github.com/sirxemic/jquery.ripples
  * MIT License

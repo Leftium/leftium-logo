@@ -137,7 +137,7 @@
 
 	<!-- Main logo grid -->
 	<div class="logo-grid">
-		{#each logoSizes.slice(0, -1) as size}
+		{#each logoSizes.slice(0, -1) as size (size)}
 			{@const scalingParams = calculateScalingParams(size)}
 			<div class="logo-test-item {size >= 400 ? 'large-size' : 'small-size'}">
 				<div class="logo-content">
@@ -179,7 +179,7 @@
 
 	<!-- Large logo on its own row -->
 	<div class="large-logo-row">
-		{#each [800] as size}
+		{#each [800] as size (size)}
 			{@const scalingParams = calculateScalingParams(size)}
 			<div class="logo-test-item large">
 				<div class="logo-content">

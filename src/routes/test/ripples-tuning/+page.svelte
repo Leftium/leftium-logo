@@ -3,11 +3,11 @@
 	import { Ripples } from '$lib/webgl-ripples/webgl-ripples.js';
 	import logoSquare from '$lib/assets/logo-parts/square.svg?inline';
 
-	let containers: { [key: string]: HTMLDivElement } = {
-		large: null as any,
-		medium: null as any,
-		small: null as any,
-		tiny: null as any
+	let containers: { [key: string]: HTMLDivElement | null } = {
+		large: null,
+		medium: null,
+		small: null,
+		tiny: null
 	};
 	let ripplesInstances: { [key: string]: Ripples | null } = {};
 	let autoDropInterval: number | null = null;
@@ -141,12 +141,6 @@
 		}, dropFrequency);
 	}
 
-	function updateFrequency() {
-		if (isAutoDropping) {
-			startAutoDrop();
-		}
-	}
-
 	onMount(() => {
 		recreateRipples();
 		startAutoDrop();
@@ -173,8 +167,6 @@
 			}
 		});
 	}
-
-	$: (dropFrequency, updateFrequency());
 </script>
 
 <div class="demo-container">
@@ -305,7 +297,7 @@
 
 		<h2>Presets</h2>
 		<div class="preset-buttons">
-			{#each Object.entries(presets) as [key, preset]}
+			{#each Object.keys(presets) as key (key)}
 				<button on:click={() => applyPreset(key)}>{key}</button>
 			{/each}
 		</div>

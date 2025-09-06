@@ -1,5 +1,6 @@
 <script module>
 	import { dev } from '$app/environment';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	// Simple shared variable - no store needed!
 	let globalAnimated = !dev;
@@ -16,7 +17,7 @@
 	}
 
 	// Keep track of all instances for updates
-	let instances = new Set<() => void>();
+	let instances = new SvelteSet<() => void>();
 
 	function updateAllInstances() {
 		instances.forEach((update) => update());

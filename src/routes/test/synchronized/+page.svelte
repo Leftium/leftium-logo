@@ -1,7 +1,6 @@
 <script lang="ts">
 	import LeftiumLogo from '$lib/LeftiumLogo.svelte';
 	import { toggleAnimation, setAnimated } from '$lib/LeftiumLogo.svelte';
-	import { dev } from '$app/environment';
 
 	let clickCount = $state(0);
 	let manualDropCount = $state(0);

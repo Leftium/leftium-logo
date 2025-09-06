@@ -6,7 +6,7 @@
 	let modifiedContainer: HTMLDivElement;
 	let originalContainer: HTMLDivElement;
 	let ripplesModified: RipplesModified | null = null;
-	let originalRipples: any = null;
+	let originalRipples: unknown = null;
 
 	onMount(() => {
 		// Initialize modified version
@@ -27,9 +27,13 @@
 		(async function () {
 			await import('$lib/webgl-ripples/webgl-ripples-original.js');
 			// The original version creates a global Ripples constructor
-			if (typeof window !== 'undefined' && (window as any).Ripples && originalContainer) {
+			if (
+				typeof window !== 'undefined' &&
+				(window as { Ripples?: unknown }).Ripples &&
+				originalContainer
+			) {
 				try {
-					const Ripples = (window as any).Ripples;
+					const Ripples = (window as { Ripples?: unknown }).Ripples;
 					originalRipples = new Ripples(originalContainer, {
 						resolution: 512,
 						dropRadius: 20,
