@@ -28,8 +28,8 @@
 		</label>
 	</div>
 	<div>
-		View the <a href="https://github.com/Leftium/leftium-logo">source code</a> or
-		<a href="/test">test pages</a>!
+		Explore the <a href="/test">test/demo pages</a> and
+		<a href="https://github.com/Leftium/leftium-logo">source code</a>!
 	</div>
 
 	<div class="logo-wrapper {boundingBox}">
