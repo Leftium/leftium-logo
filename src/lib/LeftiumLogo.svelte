@@ -74,6 +74,10 @@
 	let animatedElements: Element[];
 	let animate: (time: number) => void;
 
+	// State for dimension bindings
+	let ripplesWidth = $state(0);
+	let ripplesHeight = $state(0);
+
 	// Reactive effect to handle animation state changes from global store
 	$effect(() => {
 		if (animated) {
@@ -135,16 +139,16 @@
 		};
 		const rippleOptions = { ...DEFAULT_RIPPLES_OPTIONS, ...ripplesOptionsProp };
 
-		// Set up ResizeObserver to handle component resizing
-		let resizeObserver: ResizeObserver | null = null;
+		// Use Svelte dimension bindings for resize handling
 		let lastWidth = ripplesElement?.offsetWidth;
 		let lastHeight = ripplesElement?.offsetHeight;
 		let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
 
-		if (ripplesElement && typeof ResizeObserver !== 'undefined') {
-			resizeObserver = new ResizeObserver(() => {
-				const currentWidth = ripplesElement.offsetWidth;
-				const currentHeight = ripplesElement.offsetHeight;
+		// Reactive effect to handle dimension changes
+		$effect(() => {
+			if (ripplesWidth && ripplesHeight && animated && ripplesElement) {
+				const currentWidth = ripplesWidth;
+				const currentHeight = ripplesHeight;
 
 				// Only recreate if size actually changed significantly (more than 5px)
 				const widthChanged = Math.abs(currentWidth - (lastWidth || 0)) > 5;
@@ -203,9 +207,8 @@
 						}
 					}, 100); // 100ms debounce
 				}
-			});
-			resizeObserver.observe(ripplesElement);
-		}
+			}
+		});
 
 		let angle = $state(0);
 		let lastDropTime = $state(0);
@@ -302,9 +305,6 @@
 					console.error('Error destroying ripples on cleanup:', e);
 				}
 			}
-			if (resizeObserver) {
-				resizeObserver.disconnect();
-			}
 		};
 	};
 
@@ -337,6 +337,8 @@
 		<div
 			class="ripples square"
 			style:background-image={`url("${logoSquare}")`}
+			bind:offsetWidth={ripplesWidth}
+			bind:offsetHeight={ripplesHeight}
 			onclick={handleClick}
 			onkeydown={handleClick}
 			role="button"
