@@ -76,7 +76,6 @@
 
 	// State for dimension bindings
 	let ripplesWidth = $state(0);
-	let ripplesHeight = $state(0);
 
 	// Reactive effect to handle animation state changes from global store
 	$effect(() => {
@@ -109,25 +108,69 @@
 		animatedElements = [...element.children].filter((child) => child.classList.contains('animate'));
 		const ripplesElement = element.getElementsByClassName('ripples')[0] as HTMLElement | undefined;
 
-		// Higher resolution for smaller sizes to avoid blurriness
-		// For small logos, use closer to 1:1 ratio, for large logos cap at 512
+		// Scaling constants for ripple calculations
+		const SCALING_CONSTANTS = {
+			// Resolution scaling
+			MIN_RESOLUTION: 128,
+			MAX_RESOLUTION: 512,
+			RESOLUTION_FACTOR: 0.8,
+
+			// Drop radius scaling (linear interpolation from 62px:2px to 800px:23.36px, capped at 20px)
+			MIN_DROP_RADIUS: 2,
+			MAX_DROP_RADIUS: 20,
+			DROP_RADIUS_MIN_SIZE: 62,
+			DROP_RADIUS_MAX_SIZE: 800,
+			DROP_RADIUS_RANGE: 21.36,
+
+			// Wave propagation scaling (2.0 at 500px down to 0.2 at 125px)
+			MIN_WAVE_PROPAGATION: 0.2,
+			MAX_WAVE_PROPAGATION: 2.0,
+			WAVE_PROP_REFERENCE_SIZE: 500,
+			WAVE_PROP_MIN_SIZE: 125,
+			WAVE_PROP_FACTOR: 1.5
+		};
+
+		// Scaling utility functions
+		function calculateResolution(width: number): number {
+			return Math.min(
+				SCALING_CONSTANTS.MAX_RESOLUTION,
+				Math.max(SCALING_CONSTANTS.MIN_RESOLUTION, width * SCALING_CONSTANTS.RESOLUTION_FACTOR)
+			);
+		}
+
+		function calculateDropRadius(width: number): number {
+			return Math.min(
+				SCALING_CONSTANTS.MAX_DROP_RADIUS,
+				Math.max(
+					SCALING_CONSTANTS.MIN_DROP_RADIUS,
+					SCALING_CONSTANTS.MIN_DROP_RADIUS +
+						((width - SCALING_CONSTANTS.DROP_RADIUS_MIN_SIZE) /
+							(SCALING_CONSTANTS.DROP_RADIUS_MAX_SIZE - SCALING_CONSTANTS.DROP_RADIUS_MIN_SIZE)) *
+							SCALING_CONSTANTS.DROP_RADIUS_RANGE
+				)
+			);
+		}
+
+		function calculateWavePropagation(width: number): number {
+			return Math.max(
+				SCALING_CONSTANTS.MIN_WAVE_PROPAGATION,
+				Math.min(
+					SCALING_CONSTANTS.MAX_WAVE_PROPAGATION,
+					SCALING_CONSTANTS.MAX_WAVE_PROPAGATION -
+						((SCALING_CONSTANTS.WAVE_PROP_REFERENCE_SIZE - width) /
+							(SCALING_CONSTANTS.WAVE_PROP_REFERENCE_SIZE - SCALING_CONSTANTS.WAVE_PROP_MIN_SIZE)) *
+							SCALING_CONSTANTS.WAVE_PROP_FACTOR
+				)
+			);
+		}
+
+		// Calculate initial scaling values
 		const elementSize = ripplesElement?.offsetWidth || 100;
-		const resolution = !ripplesElement ? 512 : Math.min(512, Math.max(128, elementSize * 0.8));
-
-		// Scale drop radius based on element size: 15px at 500px down to 2px at 62px
-		// Linear interpolation from 62px:2px to 800px:23.36px, capped at 20px
-		// Formula: 2 + ((elementSize - 62) / (800 - 62)) * (23.36 - 2)
-		const scaledDropRadius = Math.min(
-			20,
-			Math.max(2, 2 + ((elementSize - 62) / (800 - 62)) * 21.36)
-		);
-
-		// Scale wave propagation based on element size: 2.0 at 500px down to 0.2 at 125px
-		// Linear interpolation for sizes 500px down to 125px, then clamp at 0.2 for smaller
-		const scaledWavePropagation = Math.max(
-			0.2,
-			Math.min(2.0, 2.0 - ((500 - elementSize) / (500 - 125)) * 1.5)
-		);
+		const resolution = !ripplesElement
+			? SCALING_CONSTANTS.MAX_RESOLUTION
+			: calculateResolution(elementSize);
+		const scaledDropRadius = calculateDropRadius(elementSize);
+		const scaledWavePropagation = calculateWavePropagation(elementSize);
 
 		const DEFAULT_RIPPLES_OPTIONS = {
 			resolution,
@@ -141,7 +184,6 @@
 
 		// Use Svelte dimension bindings for resize handling
 		let lastWidth = ripplesElement?.offsetWidth;
-		let lastHeight = ripplesElement?.offsetHeight;
 		let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
 		let hasExecutedLeading = $state(false);
 
@@ -161,18 +203,10 @@
 				// Wait a frame before creating new instance to ensure cleanup
 				requestAnimationFrame(() => {
 					if (!ripples && animated && ripplesElement) {
-						// Higher resolution for smaller sizes to avoid blurriness
-						const newResolution = Math.min(512, Math.max(128, currentWidth * 0.8));
-						// Scale drop radius and wave propagation for new size
-						// Linear interpolation from 62px:2px to 800px:23.36px, capped at 20px
-						const newScaledDropRadius = Math.min(
-							20,
-							Math.max(2, 2 + ((currentWidth - 62) / (800 - 62)) * 21.36)
-						);
-						const newScaledWavePropagation = Math.max(
-							0.2,
-							Math.min(2.0, 2.0 - ((500 - currentWidth) / (500 - 125)) * 1.5)
-						);
+						// Calculate scaled values using utility functions
+						const newResolution = calculateResolution(currentWidth);
+						const newScaledDropRadius = calculateDropRadius(currentWidth);
+						const newScaledWavePropagation = calculateWavePropagation(currentWidth);
 						const newRippleOptions = {
 							...rippleOptions,
 							resolution: newResolution,
@@ -192,17 +226,14 @@
 
 		// Reactive effect to handle dimension changes with leading + trailing edge debouncing
 		$effect(() => {
-			if (ripplesWidth && ripplesHeight && animated && ripplesElement) {
+			if (ripplesWidth && animated && ripplesElement) {
 				const currentWidth = ripplesWidth;
-				const currentHeight = ripplesHeight;
 
-				// Only recreate if size actually changed significantly (more than 5px)
+				// Only recreate if width actually changed significantly (more than 5px)
 				const widthChanged = Math.abs(currentWidth - (lastWidth || 0)) > 5;
-				const heightChanged = Math.abs(currentHeight - (lastHeight || 0)) > 5;
 
-				if (widthChanged || heightChanged) {
+				if (widthChanged) {
 					lastWidth = currentWidth;
-					lastHeight = currentHeight;
 
 					// LEADING EDGE: Execute immediately on first change in sequence
 					if (!hasExecutedLeading) {
@@ -252,10 +283,7 @@
 					const y = Math.random() * ripplesElement.offsetHeight;
 					// Use scaled drop radius for automatic drops
 					const currentSize = ripplesElement.offsetWidth;
-					const autoDropRadius = Math.min(
-						20,
-						Math.max(2, 2 + ((currentSize - 62) / (800 - 62)) * 21.36)
-					);
+					const autoDropRadius = calculateDropRadius(currentSize);
 					// Scale strength based on size - ensure minimum visibility for small sizes
 					const sizeFactor = Math.max(0.7, Math.min(1, currentSize / 200)); // Never below 70%
 					const baseStrength = 0.1 + Math.random() * 0.04;
@@ -352,7 +380,6 @@
 			class="ripples square"
 			style:background-image={`url("${logoSquare}")`}
 			bind:offsetWidth={ripplesWidth}
-			bind:offsetHeight={ripplesHeight}
 			onclick={handleClick}
 			onkeydown={handleClick}
 			role="button"
