@@ -8,6 +8,7 @@
 	"homepage": "https://logo.leftium.com/",
 	"license": "MIT",
 	"scripts": {
+		"robots": "bash scripts/update-robots.sh",
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
 		"preview": "vite preview",
