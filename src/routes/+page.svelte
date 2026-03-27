@@ -38,10 +38,11 @@
 </center>
 
 <style>
-	center {
-		font-family: sans-serif;
-		box-sizing: border-box;
+	:global(body) {
+		--nc-content-width: 100vw;
+	}
 
+	center {
 		div {
 			margin: 20px 0;
 		}
@@ -52,7 +53,7 @@
 		flex-wrap: wrap;
 		gap: 10px;
 		justify-content: center;
-		align-items: flex-start;
+		align-items: center;
 	}
 
 	.controls b {
@@ -63,16 +64,17 @@
 
 	label {
 		display: flex;
-		align-items: baseline;
+		align-items: first baseline;
 		gap: 5px;
 		flex: 0 0 120px;
 		justify-content: flex-start;
 		text-align: left;
 		line-height: 1.2;
+		margin-bottom: 0;
 	}
 
 	label input[type='radio'] {
-		margin-top: 0.1em;
+		align-self: center;
 	}
 
 	label div {

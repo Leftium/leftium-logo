@@ -455,8 +455,7 @@
 		aspect-ratio: 1;
 
 		img {
-			/* Prevent PicoCSS styles. */
-			max-width: unset !important;
+			max-width: unset;
 		}
 
 		/* Individual logo elements positioned relative to the square */
@@ -479,12 +478,10 @@
 		cursor: pointer;
 		outline: none;
 
-		/* Prevent PicoCSS [role=button] styles. */
-		padding: 0 !important;
-		border: none !important;
-		border-radius: 0 !important;
-		outline: none !important;
-		box-shadow: none !important;
+		padding: 0;
+		border: none;
+		border-radius: 0;
+		box-shadow: none;
 
 		&:focus {
 			outline: none;

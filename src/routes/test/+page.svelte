@@ -51,23 +51,13 @@
 </main>
 
 <style>
-	main {
-		max-width: 800px;
-		margin: 0 auto;
-		padding: 2rem;
-		font-family: system-ui, sans-serif;
+	:global(body) {
+		overflow-y: auto !important;
 	}
 
-	h1 {
-		color: #333;
-		text-align: center;
-		margin-bottom: 1rem;
-	}
-
+	h1,
 	p {
 		text-align: center;
-		color: #666;
-		margin-bottom: 2rem;
 	}
 
 	.test-grid {
@@ -77,45 +67,36 @@
 		margin-bottom: 2rem;
 	}
 
+	main {
+		max-width: 800px;
+		margin-inline: auto;
+	}
+
 	.test-card {
 		display: block;
-		padding: 1.5rem;
-		border: 2px solid #e0e0e0;
-		border-radius: 8px;
+		padding: 1rem;
+		border: 1px solid var(--nc-border);
+		border-radius: var(--nc-radius);
 		text-decoration: none;
 		color: inherit;
 		transition: all 0.2s ease;
-		background: #fafafa;
+		background: var(--nc-surface-2);
 	}
 
 	.test-card:hover {
-		border-color: #007acc;
-		background: #f0f8ff;
+		border-color: var(--nc-primary);
 		transform: translateY(-2px);
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 	}
 
 	.test-card h2 {
-		margin: 0 0 0.5rem 0;
-		color: #333;
-		font-size: 1.2rem;
+		font-size: 1.1rem;
+		margin: 0 0 0.25rem;
 	}
 
 	.test-card p {
-		margin: 0;
-		color: #666;
-		font-size: 0.9rem;
-		line-height: 1.4;
 		text-align: left;
-	}
-
-	a[href='/'] {
-		color: #007acc;
-		text-decoration: none;
-		font-weight: 500;
-	}
-
-	a[href='/']:hover {
-		text-decoration: underline;
+		font-size: 0.9rem;
+		margin: 0;
 	}
 </style>
