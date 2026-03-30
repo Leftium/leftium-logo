@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+	import type { RouteId } from '$app/types';
 	// Test pages listing
-	const testPages = [
+	const testPages: { name: string; path: RouteId; description: string }[] = [
 		{
 			name: 'Synchronized Animation',
 			path: '/test/synchronized',
@@ -40,14 +42,14 @@
 
 	<div class="test-grid">
 		{#each testPages as page (page.path)}
-			<a href={page.path} class="test-card">
+			<a href={resolve(page.path)} class="test-card">
 				<h2>{page.name}</h2>
 				<p>{page.description}</p>
 			</a>
 		{/each}
 	</div>
 
-	<p><a href="/">← Back to main page</a></p>
+	<p><a href={resolve('/')}>← Back to main page</a></p>
 </main>
 
 <style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import LeftiumLogo from '$lib/LeftiumLogo.svelte';
 	import { setAnimated } from '$lib/LeftiumLogo.svelte';
 	let boundingBox: 'square' | 'default' | 'encircled' | 'cropped' = $state('default');
@@ -28,7 +29,7 @@
 		</label>
 	</div>
 	<div>
-		Explore the <a href="/test">test/demos</a> and
+		Explore the <a href={resolve('/test')}>test/demos</a> and
 		<a href="https://github.com/Leftium/leftium-logo">source code</a>!
 	</div>
 
