@@ -106,7 +106,7 @@
 
 	const logoAnimation: Attachment = (element) => {
 		animatedElements = [...element.children].filter((child) => child.classList.contains('animate'));
-		const ripplesElement = element.getElementsByClassName('ripples')[0] as HTMLElement | undefined;
+		const ripplesElement = element.getElementsByTagName('d-ripple')[0] as HTMLElement | undefined;
 
 		// Scaling constants for ripple calculations
 		const SCALING_CONSTANTS = {
@@ -376,8 +376,8 @@
 	<grid-logo {@attach logoAnimation}>
 		<img class="animate shadow" alt="" src={logoShadow} />
 		<img class="glow" alt="" src={logoGlow} />
-		<div
-			class="ripples square"
+		<d-ripple
+			class="square"
 			style:background-image={`url("${logoSquare}")`}
 			bind:offsetWidth={ripplesWidth}
 			onclick={handleClick}
@@ -385,7 +385,7 @@
 			role="button"
 			tabindex="0"
 			aria-label="Toggle logo animation"
-		></div>
+		></d-ripple>
 		<img class="animate ligature" alt="" src={logoLigature} />
 	</grid-logo>
 </logo-container>
@@ -468,7 +468,10 @@
 	}
 
 	/* Square image - base element at 532x532 */
-	.ripples.square {
+	/* Uses <d-ripple> custom element to avoid classless CSS library interference */
+	/* Still needs resets for [role="button"] targeting by classless CSS libraries */
+	d-ripple.square {
+		display: block;
 		width: 100%;
 		aspect-ratio: 1;
 		background-size: contain;
@@ -478,13 +481,22 @@
 		cursor: pointer;
 		outline: none;
 
+		/* Reset [role="button"] styles from classless CSS libraries */
+		margin: 0;
 		padding: 0;
 		border: none;
 		border-radius: 0;
 		box-shadow: none;
+		background-color: transparent;
+		color: inherit;
+		font: inherit;
+		text-align: inherit;
+		text-decoration: none;
+		line-height: inherit;
 
 		&:focus {
 			outline: none;
+			box-shadow: none;
 		}
 	}
 
