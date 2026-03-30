@@ -1146,14 +1146,3 @@ class Ripples {
 
 // Export the class as ES module
 export { Ripples };
-
-// Also export as default for convenience
-export default Ripples;
-
-// Check WebGL support status
-export const isWebGLSupported = () => {
-	if (!isBrowser) return false;
-
-	// Check if config was successfully loaded
-	return config !== null;
-};

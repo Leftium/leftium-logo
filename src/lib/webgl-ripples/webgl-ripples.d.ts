@@ -16,7 +16,3 @@ export declare class Ripples {
 	set(property: string, value: unknown): void;
 	updateSize(): void;
 }
-
-export default Ripples;
-
-export declare function isWebGLSupported(): boolean;
