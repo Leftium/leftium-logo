@@ -193,3 +193,59 @@ function notchPath(size: number, r: number): string {
 function rd(n: number): number {
 	return Math.round(n * 100) / 100;
 }
+
+// ── Polygon helpers ───────────────────────────────────────────────────────────
+
+/**
+ * Extract (x, y) coordinate pairs from an SVG path `d` string.
+ *
+ * Parses M and L commands (the only ones `generateCornerPath` emits for
+ * non-degenerate Lamé curves). Ignores H/V/A/Z.
+ */
+function pathToPoints(d: string): [number, number][] {
+	const pts: [number, number][] = [];
+	// Match M or L followed by x,y
+	for (const m of d.matchAll(/[ML]\s*([\d.e+-]+)\s*,\s*([\d.e+-]+)/gi)) {
+		pts.push([parseFloat(m[1]), parseFloat(m[2])]);
+	}
+	// Also pick up H (horizontal-line-to) and V (vertical-line-to) for degenerate paths
+	// Not needed for squircle, but included for completeness with round paths
+	return pts;
+}
+
+/**
+ * Generate a CSS `polygon()` string for a superellipse corner shape.
+ *
+ * Runs `generateCornerPath` on a 100×100 grid and converts the resulting
+ * SVG path points to percentage coordinates, producing a CSS polygon that
+ * scales with the element.
+ *
+ * @param cornerRadius  Corner radius as percentage (0-50). Default: 50
+ * @param cornerShape   CornerShape keyword or superellipse(n). Default: 'squircle'
+ */
+export function generateCornerPolygon(
+	cornerRadius = 50,
+	cornerShape: CornerShape = 'squircle'
+): string {
+	const path = generateCornerPath(100, cornerRadius, cornerShape);
+	const pts = pathToPoints(path);
+	const coords = pts.map(([x, y]) => `${rd(x)}% ${rd(y)}%`).join(', ');
+	return `polygon(${coords})`;
+}
+
+/**
+ * Generate percentage-based polygon points for a superellipse corner shape.
+ *
+ * Returns an array of [x%, y%] pairs (0-100 range), suitable for conversion
+ * to SVG `<polygon>` points at any absolute size.
+ *
+ * @param cornerRadius  Corner radius as percentage (0-50). Default: 50
+ * @param cornerShape   CornerShape keyword or superellipse(n). Default: 'squircle'
+ */
+export function generateCornerPolygonPoints(
+	cornerRadius = 50,
+	cornerShape: CornerShape = 'squircle'
+): [number, number][] {
+	const path = generateCornerPath(100, cornerRadius, cornerShape);
+	return pathToPoints(path);
+}
