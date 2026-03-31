@@ -512,6 +512,9 @@ export function generateSvelteSnippet(config: AppLogoConfig): string {
 		) {
 			props.push(`\ticonRotation={${logoOverride.iconRotation}}`);
 		}
+		if (logoOverride.grayscaleLightness !== undefined && logoOverride.grayscaleLightness !== 100) {
+			props.push(`\tgrayscaleLightness={${logoOverride.grayscaleLightness}}`);
+		}
 	}
 
 	if (config.cornerRadius !== undefined && config.cornerRadius !== APP_LOGO_DEFAULTS.cornerRadius) {
@@ -570,6 +573,11 @@ export function generateSvelteSnippet(config: AppLogoConfig): string {
 		if (fav.icon !== undefined && fav.icon !== config.icon) favOverrides.push(`icon="${fav.icon}"`);
 		if (fav.iconColor !== undefined && fav.iconColor !== config.iconColor)
 			favOverrides.push(`iconColor="${fav.iconColor}"`);
+		if (
+			fav.grayscaleLightness !== undefined &&
+			fav.grayscaleLightness !== (config.logo?.grayscaleLightness ?? 100)
+		)
+			favOverrides.push(`grayscaleLightness={${fav.grayscaleLightness}}`);
 
 		// Filter out favicon overrides that match the logo
 		const meaningfulOverrides = favOverrides.filter((o) => {
