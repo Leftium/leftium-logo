@@ -4,9 +4,14 @@
 	// Test pages listing
 	const testPages: { name: string; path: RouteId; description: string }[] = [
 		{
+			name: 'AppLogo Generator',
+			path: '/test/app-logo',
+			description: 'NEW! Generate app logos/favicons with Iconify icons on gradient backgrounds'
+		},
+		{
 			name: 'Synchronized Animation',
 			path: '/test/synchronized',
-			description: 'NEW! Global synchronized animation state across all LeftiumLogo instances'
+			description: 'Global synchronized animation state across all LeftiumLogo instances'
 		},
 		{
 			name: 'Logo Scaling Test',

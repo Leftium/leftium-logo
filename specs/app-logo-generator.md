@@ -275,9 +275,11 @@ of browser support. `round` uses `<rect rx="...">` as a fast path.
 
 ## Phases
 
-### Phase 1: Core
+### Phase 1: Core ✅
 
 Minimum viable component and export. Get logos generating immediately.
+
+**Status: Complete** (commit `35cd9c5`)
 
 **Scope:**
 
@@ -293,13 +295,25 @@ Minimum viable component and export. Get logos generating immediately.
 - `generateAppLogoPng()` — canvas-based rasterization (PNG only)
 - Test page at `/test/app-logo` for interactive preview + manual download
 - Package exports for `AppLogo` component + generation functions
+- Link/card added to test route index (`/test`)
 
 **Test page (`/test/app-logo/+page.svelte`):**
 
-- Multiple `<AppLogo>` instances showing different configs side by side
-- Basic controls: icon input, color picker, size slider, offset sliders
-- "Download SVG" / "Download PNG" buttons per instance
+- Interactive controls: icon ID, color pickers, sliders for size/offset/radius, gradient toggle
+- Live 256px preview on checkerboard transparency background
+- "Download SVG" / "Download PNG" buttons
+- 5-item preset gallery (default, monochrome on red, rounded corners, large icon, small offset)
 - Serves as development sandbox until the full generator UI in Phase 3
+
+**Implementation notes:**
+
+- Monochrome detection heuristic: checks for `currentColor` in SVG; if absent, checks
+  for hardcoded `fill`/`stroke` values. If neither found, assumes monochrome.
+- CSS gradient angle to SVG `linearGradient` conversion uses `sin(angle)` / `-cos(angle)`
+  for direction vector (CSS 0deg = up, clockwise; SVG Y-axis is inverted).
+- `AppLogo.svelte` uses `$effect` + stale-request guard for async icon resolution
+  (can't use `$derived` with `async`). Resolved icon stored in `$state.raw`.
+- PNG export: SVG string → `Blob` URL → `Image` → `Canvas` → `toBlob('image/png')`.
 
 **Files:**
 
@@ -318,6 +332,7 @@ src/routes/
     +page.svelte              # test/preview page
 
 src/lib/index.ts              # add exports
+src/routes/test/+page.svelte  # add link to test index
 ```
 
 ### Phase 2: Advanced Styling
