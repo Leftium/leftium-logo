@@ -406,7 +406,13 @@
 	}
 </script>
 
-<logo-container style:--size={size} class="{boundingBox} {className}" role="none" {...restProps}>
+<logo-container
+	style:--size={size}
+	class="{boundingBox} {className}"
+	class:squircle
+	role="none"
+	{...restProps}
+>
 	<grid-logo {@attach logoAnimation}>
 		<img
 			class="animate shadow"
@@ -476,6 +482,13 @@
 			/* Center within container */
 			left: calc((100% - 100% / 1.5037) / 2);
 			top: calc((100% - 100% / 1.5037) / 2);
+		}
+
+		/* Squircle + encircled: scale up 1.04x to compensate for smaller ligature */
+		&.encircled.squircle grid-logo {
+			width: calc(100% / 1.5037 * 1.04);
+			left: calc((100% - 100% / 1.5037 * 1.04) / 2);
+			top: calc((100% - 100% / 1.5037 * 1.04) / 2);
 		}
 
 		/* Cropped bounding box mode - grid scaled and positioned to match reference SVG */

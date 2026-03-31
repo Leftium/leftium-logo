@@ -4,7 +4,6 @@
 	import { setAnimated } from '$lib/LeftiumLogo.svelte';
 	let boundingBox: 'square' | 'default' | 'encircled' | 'cropped' = $state('default');
 	let squircle = $state(true);
-
 	// Start animated on main page
 	setAnimated(true);
 </script>
@@ -43,6 +42,9 @@
 
 	<div class="logo-wrapper {boundingBox}">
 		<LeftiumLogo size="calc(min(60svh, 60svw))" {boundingBox} {squircle}></LeftiumLogo>
+		{#if boundingBox === 'encircled'}
+			<div class="circle-guide"></div>
+		{/if}
 	</div>
 </center>
 
@@ -100,7 +102,22 @@
 	/* Add dashed border around logo for testing */
 	.logo-wrapper {
 		display: inline-block;
+		position: relative;
 		border: 3px dashed red;
 		line-height: 0; /* Remove baseline spacing */
+	}
+
+	.circle-guide {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		margin: 0;
+		border: 2px dashed green;
+		border-radius: 50%;
+		pointer-events: none;
+		z-index: 10;
+		box-sizing: border-box;
 	}
 </style>
