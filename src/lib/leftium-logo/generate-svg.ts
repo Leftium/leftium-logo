@@ -30,12 +30,12 @@ const LIG_ORIG_L = 133.5;
 const LIG_ORIG_T = -65.75;
 const BLUR_PAD_ORIG = 50;
 
-// Ligature positioning — squircle mode
-const LIG_SQRC_W = 425.2;
-const LIG_SQRC_H = 643.6;
-const LIG_SQRC_L = 129.5;
-const LIG_SQRC_T = -47.6;
-const BLUR_PAD_SQRC = 48.3;
+// Ligature positioning — squircle mode (true Lamé squircle boundary)
+const LIG_SQRC_W = 405.2;
+const LIG_SQRC_H = 613.6;
+const LIG_SQRC_L = 121.4;
+const LIG_SQRC_T = -19.8;
+const BLUR_PAD_SQRC = 46.0;
 
 // Bounding box scaling factors for the grid within the output canvas.
 // CSS: grid width = canvas / scale_factor, centered.

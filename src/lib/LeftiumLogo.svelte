@@ -47,6 +47,7 @@
 		ripplesOptions?: RipplesOptions;
 		boundingBox?: 'square' | 'default' | 'cropped' | 'encircled';
 		squircle?: boolean;
+		encircledSquircleScale?: number;
 		class?: string;
 		onClick?: (event: MouseEvent | KeyboardEvent) => void;
 		[key: string]: unknown; // Allow any additional props
@@ -61,6 +62,7 @@
 		ripplesOptions: ripplesOptionsProp = {},
 		boundingBox = 'default',
 		squircle = false,
+		encircledSquircleScale = 1.08,
 		class: className = '',
 		onClick = undefined,
 		...restProps
@@ -74,13 +76,13 @@
 	const LIG_ORIG_T = -65.75;
 	const BLUR_PAD_ORIG = 50; // shadow extends 50px beyond ligature on each side
 
-	// Squircle: scaled to align inner corners with squircle boundary
-	// (base 94.46% * 1.023 scale, offset x=-6.5, y=7)
-	const LIG_SQRC_W = 425.2;
-	const LIG_SQRC_H = 643.6;
-	const LIG_SQRC_L = 129.5;
-	const LIG_SQRC_T = -47.6;
-	const BLUR_PAD_SQRC = 48.3;
+	// Squircle: scaled to align inner corners with true Lamé squircle boundary
+	// (scale 0.953 from previous squircle base, offset x=-18.1, y=+12.8 in 532-grid)
+	const LIG_SQRC_W = 405.2;
+	const LIG_SQRC_H = 613.6;
+	const LIG_SQRC_L = 121.4;
+	const LIG_SQRC_T = -19.8;
+	const BLUR_PAD_SQRC = 46.0;
 
 	// Select positioning values depending on squircle mode
 	let ligW = $derived(squircle ? LIG_SQRC_W : LIG_ORIG_W);
@@ -408,6 +410,7 @@
 
 <logo-container
 	style:--size={size}
+	style:--encircled-squircle-scale={encircledSquircleScale}
 	class="{boundingBox} {className}"
 	class:squircle
 	role="none"
@@ -484,11 +487,11 @@
 			top: calc((100% - 100% / 1.5037) / 2);
 		}
 
-		/* Squircle + encircled: scale up 1.04x to compensate for smaller ligature */
+		/* Squircle + encircled: scale up to compensate for smaller ligature */
 		&.encircled.squircle grid-logo {
-			width: calc(100% / 1.5037 * 1.04);
-			left: calc((100% - 100% / 1.5037 * 1.04) / 2);
-			top: calc((100% - 100% / 1.5037 * 1.04) / 2);
+			width: calc(100% / 1.5037 * var(--encircled-squircle-scale, 1.04));
+			left: calc((100% - 100% / 1.5037 * var(--encircled-squircle-scale, 1.04)) / 2);
+			top: calc((100% - 100% / 1.5037 * var(--encircled-squircle-scale, 1.04)) / 2);
 		}
 
 		/* Cropped bounding box mode - grid scaled and positioned to match reference SVG */
