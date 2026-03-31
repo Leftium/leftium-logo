@@ -142,5 +142,10 @@
 		top: 50%;
 		left: 50%;
 		translate: -50% -50%;
+		overflow: hidden;
+	}
+
+	.app-logo-icon :global(svg) {
+		display: block;
 	}
 </style>
