@@ -382,28 +382,46 @@ src/lib/
 | `culori`        | OKLCH color space transforms |
 | `@types/culori` | TypeScript definitions       |
 
-### Phase 3: Generator UI + Favicon Set
+### Phase 3: Generator UI + Favicon Set ✅
 
 Complete self-service tool with full asset export.
 
+**Status: Complete** (commit TBD)
+
 **Scope:**
 
-- `/generate` page with full config UI
-  - Icon search/preview (Iconify API search endpoint)
-  - All props exposed as controls with live preview
-  - Side-by-side logo + favicon preview
-  - Individual file download buttons
-  - **"Download All"** zip button
-- Full favicon set generation (`generateFaviconSet()`)
-  - `icon.svg` (with dark mode `<style>` media query)
-  - `favicon.ico` (32x32 PNG wrapped in ICO container)
-  - `apple-touch-icon.png` (180x180)
+- `/generate` page with full config UI (960px wide, overrides nimble.css default)
+  - Unified 8-column controls grid (logo label | num | slider | reset | lock | fav-slider | fav-num | fav label)
+    - Each `.ctrl-row` is an independent 8-col grid (`90px 54px 1fr 28px 36px 1fr 54px 90px`)
+    - No CSS subgrid — subgrid caused all rows to inherit the icon textarea's height
+    - Alternating row background tint for readability
+  - Per-row lock button (🔒/🔓) between logo and favicon columns
+    - Locked: favicon mirrors logo value in real time (dimmed, disabled)
+    - Unlocked: favicon has independent value; unlocking snaps favicon to current logo value
+    - All rows locked by default
+  - All props per column: icon (textarea + Browse icons link), iconColor (swatch + hex),
+    iconColorMode (dropdown), iconSize, iconOffsetX/Y, iconRotation, cornerRadius,
+    cornerShape (K slider + preset buttons: square/squircle/round/bevel/scoop/notch),
+    background (gradient toggle + solid color swatch + grad angle/position/scale)
+  - All background rows always rendered (solid color + gradient angle/position/scale);
+    inactive rows are dimmed with `opacity: 0.42` instead of removed — prevents layout shift
+    when toggling gradient on/off
+  - Each numeric control: slider + number input + ↺ reset (resets logo to default; no fav reset)
+  - Corner K row: num+slider span merged into cols 2-3 (and 6-7 for favicon) so preset
+    buttons have full width and don't wrap; favicon presets right-aligned to mirror logo side
+  - Favicon preview: 96px (3×), 32px, 16px sizes side by side, ordered largest → smallest
+  - Per-preview download buttons (SVG, PNG/WebP/ICO) and clipboard copy (PNG)
+  - **"Download All"** zip button; app name/short name in collapsible `<details>`
+- Full favicon set generation (`generateZipKit()`)
+  - `icon.svg` (favicon variant)
+  - `favicon.ico` (32×32 PNG wrapped in ICO container, written by hand — no library)
+  - `apple-touch-icon.png` (180×180)
   - `icon-192.png`, `icon-512.png` (PWA manifest)
-- Zip download contents:
+- Zip kit mirrors SvelteKit project root structure:
   ```
-  app-logo/
-    icon.svg
+  static/
     favicon.ico
+    icon.svg
     apple-touch-icon.png
     icon-192.png
     icon-512.png
@@ -411,32 +429,51 @@ Complete self-service tool with full asset export.
     logo.webp
     logo.svg
     manifest.webmanifest
-    _favicon-html.html
+    _app-logo/
+      config.json             # generator config for re-import
+  _snippets/
+    favicon-html.html         # <link> tags for app.html
   ```
-- `manifest.webmanifest` generation
-- `_favicon-html.html` snippet generation
+- `manifest.webmanifest` generation (name, short_name, icons array)
+- `_snippets/favicon-html.html` snippet generation
 - WebP export (`canvas.toBlob('image/webp')`)
-- Remove/deprecate test page (or keep as simple embed example)
+- Test page kept at `/test/app-logo` as development sandbox
 
 **Files (new/modified):**
 
 ```
 src/lib/
   app-logo/
-    generate-favicon-set.ts
-    generate-ico.ts           # ICO binary container
+    generate-favicon-set.ts   # generateZipKit, generateFaviconHtml, generateManifest
+    generate-ico.ts           # ICO binary container (manual, no library)
+    generate-png.ts           # added format: 'png' | 'webp' option
 
 src/routes/
   generate/
-    +page.svelte              # full generator UI
+    +layout.svelte            # --nc-content-width: 960px override
+    +page.svelte              # full generator UI (~2000 lines)
 ```
 
-**Dependencies (Phase 3 only):**
+**Dependencies (Phase 3):**
 
-| Package             | Purpose                                       | Required?                                               |
-| ------------------- | --------------------------------------------- | ------------------------------------------------------- |
-| `jszip`             | Zip file generation for "Download All"        | Yes (devDependency, ~45KB gzipped)                      |
-| `modern-screenshot` | DOM-to-image fallback for emoji/complex cases | Optional, only if programmatic SVG path is insufficient |
+| Package | Purpose                                | Required? |
+| ------- | -------------------------------------- | --------- |
+| `jszip` | Zip file generation for "Download All" | Yes       |
+
+**Implementation notes:**
+
+- ICO format: 6-byte ICONDIR header + 16-byte ICONDIRENTRY + raw PNG bytes.
+  Width/height read from PNG IHDR chunk at bytes 16-23 (big-endian uint32).
+- WebP: same canvas pipeline as PNG, just `canvas.toBlob('image/webp')`.
+- Clipboard copy: `navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])`.
+- Zip kit: uses `jszip` with folder structure; `generateZipKit()` runs all exports
+  in parallel via `Promise.all`.
+- `modern-screenshot` not needed — programmatic SVG path proved sufficient.
+- Lock/unlock icons: icomoon-free padlock SVGs inlined as constants (no async fetch).
+  Unlock icon uses `viewBox="0 0 16 16"` with `overflow="visible"` so the open
+  shackle extends past the viewBox without distorting the padlock body proportions.
+- `effectiveFavicon`: derived object that merges locked fields from `logo` and
+  unlocked fields from `favicon`; used for all favicon rendering and export.
 
 ---
 

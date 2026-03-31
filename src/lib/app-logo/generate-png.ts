@@ -2,23 +2,25 @@ import type { AppLogoConfig } from './types.js';
 import { generateAppLogoSvg } from './generate-svg.js';
 
 /**
- * Generate a PNG Blob from an AppLogo configuration.
+ * Generate a PNG or WebP Blob from an AppLogo configuration.
  *
- * Renders the SVG onto an offscreen canvas and exports as PNG.
+ * Renders the SVG onto an offscreen canvas and exports as PNG or WebP.
  * Browser-only (requires canvas and Image).
  *
  * @param config - The AppLogo configuration
  * @param options - Export options
- * @returns PNG Blob
+ * @returns PNG or WebP Blob
  */
 export async function generateAppLogoPng(
 	config: AppLogoConfig,
 	options?: {
 		variant?: 'logo' | 'favicon';
 		size?: number; // px, default: 512
+		format?: 'png' | 'webp'; // default: 'png'
 	}
 ): Promise<Blob> {
 	const size = options?.size ?? 512;
+	const mimeType = options?.format === 'webp' ? 'image/webp' : 'image/png';
 
 	// Override size in config for SVG generation
 	const sizedConfig: AppLogoConfig = {
@@ -50,14 +52,14 @@ export async function generateAppLogoPng(
 
 				ctx.drawImage(img, 0, 0, size, size);
 
-				canvas.toBlob((pngBlob) => {
+				canvas.toBlob((outBlob) => {
 					URL.revokeObjectURL(url);
-					if (pngBlob) {
-						resolve(pngBlob);
+					if (outBlob) {
+						resolve(outBlob);
 					} else {
 						reject(new Error('Canvas toBlob returned null'));
 					}
-				}, 'image/png');
+				}, mimeType);
 			} catch (err) {
 				URL.revokeObjectURL(url);
 				reject(err);
