@@ -257,7 +257,150 @@ of browser support. `round` uses `<rect rx="...">` as a fast path.
 
 ---
 
-## Output Formats & Delivery
+## Export Formats
+
+| Format | Method                                   | Use case                                         | Phase |
+| ------ | ---------------------------------------- | ------------------------------------------------ | ----- |
+| SVG    | Programmatic string                      | Favicon `<link>`, inline, resolution-independent | 1     |
+| PNG    | Canvas `toBlob('image/png')`             | General logo image, apple-touch-icon             | 1     |
+| WebP   | Canvas `toBlob('image/webp')`            | Smaller file size for web use                    | 3     |
+| ICO    | 32px PNG wrapped in ICO binary container | Favicon fallback for older browsers              | 3     |
+
+### WebP support notes
+
+- **As an image format**: 97% global browser support. Fine for logo downloads.
+- **As a favicon**: Not standardized for `<link rel="icon">`. Do not use for favicons.
+
+---
+
+## Phases
+
+### Phase 1: Core
+
+Minimum viable component and export. Get logos generating immediately.
+
+**Scope:**
+
+- `AppLogoProps` and `AppLogoConfig` types with defaults
+- `AppLogo.svelte` component (live preview)
+- Iconify API fetch + cache (`iconify.ts`)
+- Icon source auto-detection (Iconify ID / emoji / SVG string / data URL)
+- `iconColor` + `iconColorMode: "auto" | "original" | "monochrome"` only
+- `cornerRadius` (standard CSS `border-radius` only, no squircle yet)
+- `background`: solid color + gradient with `angle` + `colors` + `stops`
+- `iconSize`, `iconOffsetX`, `iconOffsetY`
+- `generateAppLogoSvg()` — programmatic SVG string builder
+- `generateAppLogoPng()` — canvas-based rasterization (PNG only)
+- Test page at `/test/app-logo` for interactive preview + manual download
+- Package exports for `AppLogo` component + generation functions
+
+**Test page (`/test/app-logo/+page.svelte`):**
+
+- Multiple `<AppLogo>` instances showing different configs side by side
+- Basic controls: icon input, color picker, size slider, offset sliders
+- "Download SVG" / "Download PNG" buttons per instance
+- Serves as development sandbox until the full generator UI in Phase 3
+
+**Files:**
+
+```
+src/lib/
+  AppLogo.svelte
+  app-logo/
+    types.ts
+    defaults.ts
+    generate-svg.ts
+    generate-png.ts
+    iconify.ts
+
+src/routes/
+  test/app-logo/
+    +page.svelte              # test/preview page
+
+src/lib/index.ts              # add exports
+```
+
+### Phase 2: Advanced Styling
+
+Full visual flexibility for corner shapes and icon color transforms.
+
+**Scope:**
+
+- `cornerShape` — squircle + all `<corner-shape-value>` keywords + `superellipse(n)`
+- Superellipse path generation (`squircle.ts`)
+- Gradient `position` and `scale` props
+- `iconRotation`
+- Full `iconColorMode`: `"grayscale"`, `"grayscale-tint"`, `{ hue, saturation? }`
+- HSL color parsing and transformation utilities
+
+**Files (new/modified):**
+
+```
+src/lib/
+  app-logo/
+    squircle.ts               # superellipse path generation
+    color-transform.ts        # HSL parsing, grayscale, hue-shift
+```
+
+### Phase 3: Generator UI + Favicon Set
+
+Complete self-service tool with full asset export.
+
+**Scope:**
+
+- `/generate` page with full config UI
+  - Icon search/preview (Iconify API search endpoint)
+  - All props exposed as controls with live preview
+  - Side-by-side logo + favicon preview
+  - Individual file download buttons
+  - **"Download All"** zip button
+- Full favicon set generation (`generateFaviconSet()`)
+  - `icon.svg` (with dark mode `<style>` media query)
+  - `favicon.ico` (32x32 PNG wrapped in ICO container)
+  - `apple-touch-icon.png` (180x180)
+  - `icon-192.png`, `icon-512.png` (PWA manifest)
+- Zip download contents:
+  ```
+  app-logo/
+    icon.svg
+    favicon.ico
+    apple-touch-icon.png
+    icon-192.png
+    icon-512.png
+    logo.png
+    logo.webp
+    logo.svg
+    manifest.webmanifest
+    _favicon-html.html
+  ```
+- `manifest.webmanifest` generation
+- `_favicon-html.html` snippet generation
+- WebP export (`canvas.toBlob('image/webp')`)
+- Remove/deprecate test page (or keep as simple embed example)
+
+**Files (new/modified):**
+
+```
+src/lib/
+  app-logo/
+    generate-favicon-set.ts
+    generate-ico.ts           # ICO binary container
+
+src/routes/
+  generate/
+    +page.svelte              # full generator UI
+```
+
+**Dependencies (Phase 3 only):**
+
+| Package             | Purpose                                       | Required?                                               |
+| ------------------- | --------------------------------------------- | ------------------------------------------------------- |
+| `jszip`             | Zip file generation for "Download All"        | Yes (devDependency, ~45KB gzipped)                      |
+| `modern-screenshot` | DOM-to-image fallback for emoji/complex cases | Optional, only if programmatic SVG path is insufficient |
+
+---
+
+## Generation Approach
 
 ### Programmatic SVG generation (primary path)
 
@@ -278,21 +421,35 @@ fall back to `modern-screenshot` (`domToPng` / `domToWebp`):
 
 - **Why modern-screenshot over html-to-image**: Actively maintained fork, built-in
   WebP support, progress callbacks, smaller bundle, nearly identical API as fallback.
-- Both use the same foreignObject SVG -> canvas technique.
+- Both use the same foreignObject SVG → canvas technique.
 
-### Export formats
+### Programmatic API
 
-| Format | Method                                          | Use case                                         |
-| ------ | ----------------------------------------------- | ------------------------------------------------ |
-| SVG    | Programmatic string                             | Favicon `<link>`, inline, resolution-independent |
-| PNG    | Canvas `toBlob('image/png')`                    | General logo image, apple-touch-icon             |
-| WebP   | Canvas `toBlob('image/webp')`                   | Smaller file size for web use                    |
-| ICO    | Not generated (use SVG + PNG fallback strategy) | See favicon strategy below                       |
+Exported functions for use in scripts, server routes, or other components:
 
-### WebP support notes
+```typescript
+// Returns an SVG string (Phase 1)
+function generateAppLogoSvg(config: AppLogoConfig, variant?: 'logo' | 'favicon'): Promise<string>;
 
-- **As an image format**: 97% global browser support. Fine for logo downloads.
-- **As a favicon**: Not standardized for `<link rel="icon">`. Do not use for favicons.
+// Returns a PNG/WebP Blob — browser only, needs canvas (Phase 1: PNG only; Phase 3: +WebP)
+function generateAppLogoPng(
+	config: AppLogoConfig,
+	options?: {
+		variant?: 'logo' | 'favicon';
+		size?: number; // px, default: 512
+		format?: 'png' | 'webp';
+	}
+): Promise<Blob>;
+
+// Returns the full favicon file set (Phase 3)
+function generateFaviconSet(config: AppLogoConfig): Promise<{
+	svg: string; // icon.svg content
+	ico: Blob; // favicon.ico (32x32)
+	appleTouchIcon: Blob; // 180x180 PNG
+	icon192: Blob; // 192x192 PNG
+	icon512: Blob; // 512x512 PNG
+}>;
+```
 
 ---
 
@@ -305,7 +462,6 @@ the recommended minimal favicon set is:
 <link rel="icon" href="/favicon.ico" sizes="32x32" />
 <link rel="icon" href="/icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-<!-- 180x180 -->
 ```
 
 Plus for PWAs:
@@ -320,16 +476,6 @@ Plus for PWAs:
 }
 ```
 
-**What we generate:**
-
-| File                   | Size    | Notes                                                         |
-| ---------------------- | ------- | ------------------------------------------------------------- |
-| `icon.svg`             | vector  | Primary favicon; supports dark mode via `<style>` media query |
-| `favicon.ico`          | 32x32   | ICO fallback (single 32px PNG wrapped in ICO container)       |
-| `apple-touch-icon.png` | 180x180 | For iOS home screen; 20px padding recommended                 |
-| `icon-192.png`         | 192x192 | PWA manifest                                                  |
-| `icon-512.png`         | 512x512 | PWA manifest / splash                                         |
-
 **SVG favicon dark mode**: The generated SVG can include a `<style>` block with
 `@media (prefers-color-scheme: dark)` to swap icon/background colors.
 
@@ -338,134 +484,35 @@ The `.ico` fallback covers the remaining 10%.
 
 ---
 
-## Generation Approach
-
-### In-browser UI (primary)
-
-A page in the dev app at `/generate` where you:
-
-1. Enter an Iconify icon ID (with search/preview) or paste an emoji
-2. Tweak background, corner radius, squircle, icon size/position/color
-3. See live preview of both logo and favicon variants side by side
-4. Download individual files or **"Download All"** as a zip
-
-#### Zip download contents
-
-The "Download All" button produces a zip file (via `JSZip` or manual zip
-construction) containing everything needed to drop into a project's `static/`
-folder:
-
-```
-app-logo/
-  icon.svg                  # SVG favicon (with dark mode media query)
-  favicon.ico               # 32x32 ICO fallback
-  apple-touch-icon.png      # 180x180
-  icon-192.png              # PWA manifest
-  icon-512.png              # PWA manifest / splash
-  logo.png                  # Full-size logo (512 or 1024, configurable)
-  logo.webp                 # WebP variant of the logo
-  logo.svg                  # Vector logo (may differ from favicon SVG in icon size/position)
-  manifest.webmanifest      # Ready-to-use web app manifest snippet
-  _favicon-html.html        # Copy-pasteable <link> tags for <head>
-```
-
-The `manifest.webmanifest` contains just the `icons` array:
-
-```json
-{
-	"icons": [
-		{ "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
-		{ "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" }
-	]
-}
-```
-
-The `_favicon-html.html` contains the recommended `<link>` tags:
-
-```html
-<link rel="icon" href="/favicon.ico" sizes="32x32" />
-<link rel="icon" href="/icon.svg" type="image/svg+xml" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-<link rel="manifest" href="/manifest.webmanifest" />
-```
-
-### Programmatic API
-
-Exported functions for use in scripts, server routes, or other components:
-
-```typescript
-// Returns an SVG string
-function generateAppLogoSvg(config: AppLogoConfig, variant?: 'logo' | 'favicon'): Promise<string>;
-
-// Returns a PNG/WebP Blob (browser only, needs canvas)
-function generateAppLogoPng(
-	config: AppLogoConfig,
-	options?: {
-		variant?: 'logo' | 'favicon';
-		size?: number; // px, default: 512
-		format?: 'png' | 'webp';
-	}
-): Promise<Blob>;
-
-// Returns the full favicon file set
-function generateFaviconSet(config: AppLogoConfig): Promise<{
-	svg: string; // icon.svg content
-	ico: Blob; // favicon.ico (32x32)
-	appleTouchIcon: Blob; // 180x180 PNG
-	icon192: Blob; // 192x192 PNG
-	icon512: Blob; // 512x512 PNG
-}>;
-```
-
----
-
-## File Structure
-
-```
-src/lib/
-  AppLogo.svelte                # the component
-  app-logo/
-    types.ts                    # AppLogoProps, AppLogoConfig
-    defaults.ts                 # LEFTIUM_GRADIENT, default sizes
-    generate-svg.ts             # programmatic SVG string builder
-    generate-png.ts             # canvas-based rasterization
-    generate-favicon-set.ts     # full favicon set generator
-    squircle.ts                 # superellipse path generation
-    iconify.ts                  # Iconify API fetch + cache
-
-src/routes/
-  generate/
-    +page.svelte                # generator UI
-
-src/lib/index.ts                # add: export AppLogo + generation functions
-```
-
----
-
 ## Package Exports
 
 Added to `src/lib/index.ts`:
 
 ```typescript
+// Phase 1
 export { default as AppLogo } from './AppLogo.svelte';
 export type { AppLogoProps, AppLogoConfig } from './app-logo/types.ts';
 export { generateAppLogoSvg } from './app-logo/generate-svg.ts';
 export { generateAppLogoPng } from './app-logo/generate-png.ts';
-export { generateFaviconSet } from './app-logo/generate-favicon-set.ts';
 export { LEFTIUM_GRADIENT } from './app-logo/defaults.ts';
+
+// Phase 3
+export { generateFaviconSet } from './app-logo/generate-favicon-set.ts';
 ```
 
 ---
 
 ## Dependencies
 
+No new runtime dependencies in Phases 1–2. Iconify icons are fetched via HTTP API
+at generation time (dev/build, not shipped to end users).
+
+Phase 3 adds:
+
 | Package             | Purpose                                       | Required?                                               |
 | ------------------- | --------------------------------------------- | ------------------------------------------------------- |
 | `jszip`             | Zip file generation for "Download All"        | Yes (devDependency, ~45KB gzipped)                      |
 | `modern-screenshot` | DOM-to-image fallback for emoji/complex cases | Optional, only if programmatic SVG path is insufficient |
-
-No other new runtime dependencies. Iconify icons are fetched via HTTP API at
-generation time (dev/build, not shipped to end users).
 
 ---
 
