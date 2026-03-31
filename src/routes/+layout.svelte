@@ -14,5 +14,6 @@
 <style>
 	:global(body) {
 		overflow: hidden;
+		--nc-content-width: 100vw;
 	}
 </style>

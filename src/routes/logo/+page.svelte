@@ -1437,7 +1437,7 @@
 	}
 
 	main {
-		max-width: var(--nc-content-width, 1100px);
+		max-width: 960px;
 		margin: 0 auto;
 		padding: 1rem 1rem 3rem;
 	}

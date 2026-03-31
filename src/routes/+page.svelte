@@ -33,7 +33,9 @@
 		</label>
 	</div>
 	<div>
-		<a href={resolve('/generate')}><b>App Logo Generator</b></a>
+		<a href={resolve('/logo')}><b>App Logo Generator</b></a>
+		&bull;
+		<a href={resolve('/logo-leftium')}><b>Leftium Logo Generator</b></a>
 		&bull;
 		<a href={resolve('/test')}>Test/Demos</a>
 		&bull;
@@ -49,10 +51,6 @@
 </center>
 
 <style>
-	:global(body) {
-		--nc-content-width: 100vw;
-	}
-
 	center {
 		div {
 			margin: 20px 0;
