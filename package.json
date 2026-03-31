@@ -52,6 +52,7 @@
 		"@sveltejs/kit": "^2.55.0",
 		"@sveltejs/package": "^2.5.7",
 		"@sveltejs/vite-plugin-svelte": "^7.0.0",
+		"@types/culori": "^4.0.1",
 		"@types/node": "^25.5.0",
 		"eslint": "^10.1.0",
 		"eslint-config-prettier": "^10.1.8",
@@ -74,5 +75,8 @@
 		"onlyBuiltDependencies": [
 			"esbuild"
 		]
+	},
+	"dependencies": {
+		"culori": "^4.0.2"
 	}
 }

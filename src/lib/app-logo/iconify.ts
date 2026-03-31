@@ -1,5 +1,6 @@
 import { detectIconSource } from './defaults.js';
-import type { IconSourceType } from './types.js';
+import type { IconColorMode, IconSourceType } from './types.js';
+import { applyColorMode as applyColorModeTransform } from './color-transform.js';
 
 /** Cached Iconify SVG strings keyed by icon ID */
 const iconCache = new Map<string, string>();
@@ -117,33 +118,18 @@ function detectMonochrome(svg: string): boolean {
 /**
  * Apply color mode to SVG content.
  *
- * Phase 1 supports: 'auto', 'original', 'monochrome'
+ * Supports all IconColorMode values: 'auto', 'original', 'monochrome',
+ * 'grayscale', 'grayscale-tint', and { hue, saturation? }.
+ *
+ * Delegates to color-transform.ts for the full implementation.
  */
 export function applyColorMode(
 	svgContent: string,
 	isMonochrome: boolean,
-	colorMode: 'auto' | 'original' | 'monochrome',
+	colorMode: IconColorMode,
 	iconColor: string
 ): string {
-	switch (colorMode) {
-		case 'original':
-			return svgContent;
-
-		case 'monochrome':
-			// Replace ALL fill/stroke values (except "none") with iconColor
-			return svgContent
-				.replace(/(fill=["'])(?!none)([^"']+)(["'])/gi, `$1${iconColor}$3`)
-				.replace(/(stroke=["'])(?!none)([^"']+)(["'])/gi, `$1${iconColor}$3`);
-
-		case 'auto':
-		default:
-			if (isMonochrome) {
-				// Replace currentColor with iconColor
-				return svgContent.replace(/currentColor/g, iconColor);
-			}
-			// Multicolor: keep as-is
-			return svgContent;
-	}
+	return applyColorModeTransform(svgContent, isMonochrome, colorMode, iconColor);
 }
 
 /**

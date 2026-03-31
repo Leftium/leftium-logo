@@ -1,6 +1,7 @@
-import type { AppLogoConfig, AppLogoProps, GradientConfig } from './types.js';
+import type { AppLogoConfig, AppLogoProps, CornerShape, GradientConfig } from './types.js';
 import { APP_LOGO_DEFAULTS } from './defaults.js';
 import { resolveIcon, applyColorMode } from './iconify.js';
+import { generateCornerPath } from './squircle.js';
 
 /**
  * Resolve merged props from an AppLogoConfig + variant.
@@ -28,8 +29,16 @@ function resolveProps(config: AppLogoConfig, variant?: 'logo' | 'favicon'): Requ
  *
  * CSS: 0deg = bottom-to-top, 90deg = left-to-right, 180deg = top-to-bottom
  * SVG: x1,y1 = start point, x2,y2 = end point (as percentages)
+ *
+ * @param angleDeg - CSS gradient angle in degrees
+ * @param position - Shift gradient along its axis as % (-100 to 100), default 0
+ * @param scale - Scale gradient length (1 = full span, 0.5 = half, 2 = double), default 1
  */
-function angleToGradientCoords(angleDeg: number): {
+function angleToGradientCoords(
+	angleDeg: number,
+	position: number = 0,
+	scale: number = 1
+): {
 	x1: string;
 	y1: string;
 	x2: string;
@@ -44,53 +53,83 @@ function angleToGradientCoords(angleDeg: number): {
 	const dx = Math.sin(rad);
 	const dy = -Math.cos(rad);
 
-	// Start point is opposite to the direction, end point is in the direction
-	// Map to 0-100% range, centered at 50%
-	const x1 = Math.round(50 - dx * 50);
-	const y1 = Math.round(50 - dy * 50);
-	const x2 = Math.round(50 + dx * 50);
-	const y2 = Math.round(50 + dy * 50);
+	// Half-length of the gradient vector, scaled
+	const halfLen = 50 * scale;
+
+	// Position shift along the gradient axis (% of full span)
+	const shiftX = dx * (position / 100) * 50;
+	const shiftY = dy * (position / 100) * 50;
+
+	// Center point, shifted by position
+	const cx = 50 + shiftX;
+	const cy = 50 + shiftY;
+
+	// Start and end points
+	const x1 = Math.round(cx - dx * halfLen);
+	const y1 = Math.round(cy - dy * halfLen);
+	const x2 = Math.round(cx + dx * halfLen);
+	const y2 = Math.round(cy + dy * halfLen);
 
 	return { x1: `${x1}%`, y1: `${y1}%`, x2: `${x2}%`, y2: `${y2}%` };
 }
 
 /**
- * Build an SVG <defs> block for the gradient background.
+ * Build a <linearGradient> element for the gradient background.
+ * Returns the element without wrapping <defs>.
  */
-function buildGradientDefs(gradient: GradientConfig, id: string): string {
+function buildGradientElement(gradient: GradientConfig, id: string): string {
 	const angle = gradient.angle ?? 45;
-	const coords = angleToGradientCoords(angle);
+	const position = gradient.position ?? 0;
+	const scale = gradient.scale ?? 1;
+	const coords = angleToGradientCoords(angle, position, scale);
 
 	const stops = gradient.colors
 		.map((color, i) => {
 			const offset = gradient.stops ? gradient.stops[i] : i / (gradient.colors.length - 1);
 			return `<stop offset="${(offset * 100).toFixed(1)}%" stop-color="${color}"/>`;
 		})
-		.join('\n    ');
+		.join('\n      ');
 
-	return `<defs>
-    <linearGradient id="${id}" x1="${coords.x1}" y1="${coords.y1}" x2="${coords.x2}" y2="${coords.y2}">
-    ${stops}
-    </linearGradient>
-  </defs>`;
+	return `<linearGradient id="${id}" x1="${coords.x1}" y1="${coords.y1}" x2="${coords.x2}" y2="${coords.y2}">
+      ${stops}
+    </linearGradient>`;
 }
 
 /**
- * Build the background rect element (solid color or gradient fill).
+ * Build the background element (solid color or gradient fill).
+ *
+ * For 'round' corners, uses a standard <rect> with rx/ry.
+ * For other corner shapes, uses a <path> with the superellipse curve.
  */
-function buildBackgroundRect(
+function buildBackground(
 	background: string | GradientConfig,
 	size: number,
 	cornerRadius: number,
+	cornerShape: CornerShape,
 	gradientId: string
-): string {
+): { defs: string; element: string } {
 	const fill = typeof background === 'string' ? background : `url(#${gradientId})`;
-	const rx =
-		cornerRadius > 0
-			? ` rx="${(cornerRadius / 100) * size}" ry="${(cornerRadius / 100) * size}"`
-			: '';
 
-	return `<rect width="${size}" height="${size}"${rx} fill="${fill}"/>`;
+	// For 'round' shape, use standard rect with rx/ry (cleaner SVG)
+	if (cornerShape === 'round') {
+		const rx =
+			cornerRadius > 0
+				? ` rx="${(cornerRadius / 100) * size}" ry="${(cornerRadius / 100) * size}"`
+				: '';
+		return {
+			defs: '',
+			element: `<rect width="${size}" height="${size}"${rx} fill="${fill}"/>`
+		};
+	}
+
+	// For other shapes, generate the superellipse path
+	const pathD = generateCornerPath(size, cornerRadius, cornerShape);
+	const clipId = 'app-logo-clip';
+
+	return {
+		defs: `<clipPath id="${clipId}"><path d="${pathD}"/></clipPath>`,
+		element: `<rect width="${size}" height="${size}" fill="${fill}" clip-path="url(#${clipId})"/>`
+	};
 }
 
 /**
@@ -102,7 +141,8 @@ function buildIconLayer(
 	size: number,
 	iconSize: number,
 	iconOffsetX: number,
-	iconOffsetY: number
+	iconOffsetY: number,
+	iconRotation: number
 ): string {
 	// Parse viewBox
 	const [vbX, vbY, vbW, vbH] = viewBox.split(' ').map(Number);
@@ -123,7 +163,13 @@ function buildIconLayer(
 	const tx = (size - renderedW) / 2 + offsetXPx;
 	const ty = (size - renderedH) / 2 + offsetYPx;
 
-	return `<g transform="translate(${tx.toFixed(2)}, ${ty.toFixed(2)}) scale(${scale.toFixed(4)}) translate(${-vbX}, ${-vbY})">
+	// Rotation around the icon's center
+	const rotateAttr =
+		iconRotation !== 0
+			? ` rotate(${iconRotation}, ${(renderedW / 2).toFixed(2)}, ${(renderedH / 2).toFixed(2)})`
+			: '';
+
+	return `<g transform="translate(${tx.toFixed(2)}, ${ty.toFixed(2)})${rotateAttr} scale(${scale.toFixed(4)}) translate(${-vbX}, ${-vbY})">
     ${svgContent}
   </g>`;
 }
@@ -146,34 +192,43 @@ export async function generateAppLogoSvg(
 	// Resolve icon
 	const resolved = await resolveIcon(props.icon);
 
-	// Apply color mode (Phase 1: only auto/original/monochrome)
-	const colorMode =
-		typeof props.iconColorMode === 'string'
-			? (props.iconColorMode as 'auto' | 'original' | 'monochrome')
-			: 'auto'; // Phase 2 object modes fall back to auto
+	// Apply color mode (supports all IconColorMode values)
 	const coloredContent = applyColorMode(
 		resolved.svgContent,
 		resolved.isMonochrome,
-		colorMode,
+		props.iconColorMode,
 		props.iconColor
 	);
 
 	// Build SVG parts
 	const isGradient = typeof props.background !== 'string';
-	const defs = isGradient ? buildGradientDefs(props.background as GradientConfig, gradientId) : '';
-	const bgRect = buildBackgroundRect(props.background, size, props.cornerRadius, gradientId);
+	const gradientEl = isGradient
+		? buildGradientElement(props.background as GradientConfig, gradientId)
+		: '';
+	const bg = buildBackground(
+		props.background,
+		size,
+		props.cornerRadius,
+		props.cornerShape,
+		gradientId
+	);
 	const iconLayer = buildIconLayer(
 		coloredContent,
 		resolved.viewBox,
 		size,
 		props.iconSize,
 		props.iconOffsetX,
-		props.iconOffsetY
+		props.iconOffsetY,
+		props.iconRotation
 	);
 
+	// Combine all defs (gradient + clip path)
+	const allDefs = [gradientEl, bg.defs].filter(Boolean).join('\n    ');
+	const defsBlock = allDefs ? `<defs>\n    ${allDefs}\n  </defs>` : '';
+
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  ${defs}
-  ${bgRect}
+  ${defsBlock}
+  ${bg.element}
   ${iconLayer}
 </svg>`;
 }

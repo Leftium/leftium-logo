@@ -335,27 +335,52 @@ src/lib/index.ts              # add exports
 src/routes/test/+page.svelte  # add link to test index
 ```
 
-### Phase 2: Advanced Styling
+### Phase 2: Advanced Styling ✅
 
 Full visual flexibility for corner shapes and icon color transforms.
+
+**Status: Complete**
 
 **Scope:**
 
 - `cornerShape` — squircle + all `<corner-shape-value>` keywords + `superellipse(n)`
-- Superellipse path generation (`squircle.ts`)
+- Superellipse path generation (`squircle.ts`) per CSS Borders Level 4 spec
 - Gradient `position` and `scale` props
-- `iconRotation`
+- `iconRotation` (around icon center)
 - Full `iconColorMode`: `"grayscale"`, `"grayscale-tint"`, `{ hue, saturation? }`
-- HSL color parsing and transformation utilities
+- OKLCH color transforms via `culori` library (not HSL)
 
-**Files (new/modified):**
+**Implementation notes:**
+
+- **Superellipse parametric curve**: Follows CSS Borders L4 spec exactly —
+  `K = 2^abs(curvature)`, sampling `(T^K, (1-T)^K)` at 64 segments per corner.
+  `round` (K=1) uses SVG arc commands for exact rendering.
+- **Clip-out vs outline inversion**: The CSS spec generates a "clip-out" path (what
+  to remove). Our outline path inverts the reference point: convex shapes use the
+  outer corner, concave shapes use the inner center.
+- **Notch (K=-∞)**: Inward right-angle cuts — path goes from tangent point inward
+  to the corner-region center, then back out to the other tangent point.
+- **OKLCH color space**: `culori` library used for perceptually uniform color
+  transforms (grayscale via C=0, tint via hue/chroma at 70%, hue remap preserving L).
+- **Test page UI**: Corner shape exposed as a continuous K slider (-10 to 10) with
+  preset buttons (square, squircle, round, bevel, scoop, notch) rather than a
+  dropdown, enabling smooth interpolation between shapes.
+
+**Files (new):**
 
 ```
 src/lib/
   app-logo/
-    squircle.ts               # superellipse path generation
-    color-transform.ts        # HSL parsing, grayscale, hue-shift
+    squircle.ts               # superellipse path generation (CSS Borders L4)
+    color-transform.ts        # OKLCH color transforms via culori
 ```
+
+**Dependencies added:**
+
+| Package         | Purpose                      |
+| --------------- | ---------------------------- |
+| `culori`        | OKLCH color space transforms |
+| `@types/culori` | TypeScript definitions       |
 
 ### Phase 3: Generator UI + Favicon Set
 
@@ -519,8 +544,8 @@ export { generateFaviconSet } from './app-logo/generate-favicon-set.ts';
 
 ## Dependencies
 
-No new runtime dependencies in Phases 1–2. Iconify icons are fetched via HTTP API
-at generation time (dev/build, not shipped to end users).
+Phase 2 added `culori` (OKLCH color transforms) + `@types/culori`. Iconify icons
+are fetched via HTTP API at generation time (dev/build, not shipped to end users).
 
 Phase 3 adds:
 

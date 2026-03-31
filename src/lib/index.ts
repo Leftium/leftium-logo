@@ -17,3 +17,7 @@ export type {
 export { generateAppLogoSvg } from './app-logo/generate-svg.js';
 export { generateAppLogoPng } from './app-logo/generate-png.js';
 export { LEFTIUM_GRADIENT } from './app-logo/defaults.js';
+
+// Phase 2: Advanced styling utilities
+export { generateCornerPath, cornerShapeToK } from './app-logo/squircle.js';
+export { applyColorMode } from './app-logo/color-transform.js';

@@ -1,7 +1,8 @@
 <script lang="ts">
-	import type { AppLogoProps, GradientConfig } from './app-logo/types.js';
+	import type { AppLogoProps, GradientConfig, IconColorMode } from './app-logo/types.js';
 	import { APP_LOGO_DEFAULTS } from './app-logo/defaults.js';
 	import { resolveIcon, applyColorMode, type ResolvedIcon } from './app-logo/iconify.js';
+	import { generateCornerPath } from './app-logo/squircle.js';
 
 	let {
 		icon = APP_LOGO_DEFAULTS.icon,
@@ -12,6 +13,7 @@
 		iconOffsetY = APP_LOGO_DEFAULTS.iconOffsetY,
 		iconRotation = APP_LOGO_DEFAULTS.iconRotation,
 		cornerRadius = APP_LOGO_DEFAULTS.cornerRadius,
+		cornerShape = APP_LOGO_DEFAULTS.cornerShape,
 		background = APP_LOGO_DEFAULTS.background as AppLogoProps['background'],
 		size = APP_LOGO_DEFAULTS.size
 	}: AppLogoProps = $props();
@@ -32,20 +34,11 @@
 		});
 	});
 
-	// Normalize color mode: Phase 2 object modes fall back to 'auto'
-	let effectiveColorMode: 'auto' | 'original' | 'monochrome' = $derived(
-		typeof iconColorMode === 'object'
-			? 'auto'
-			: iconColorMode === 'original' || iconColorMode === 'monochrome'
-				? iconColorMode
-				: 'auto'
-	);
-
 	// Apply color transformation to the resolved SVG content
 	let coloredSvgContent = $derived.by(() => {
 		const r = resolved;
 		if (!r) return '';
-		return applyColorMode(r.svgContent, r.isMonochrome, effectiveColorMode, iconColor!);
+		return applyColorMode(r.svgContent, r.isMonochrome, iconColorMode!, iconColor!);
 	});
 
 	// Build the full inline SVG with viewBox and 100% sizing
@@ -64,16 +57,29 @@
 		// GradientConfig
 		const grad = background as GradientConfig;
 		const angle = grad.angle ?? 45;
+		const position = grad.position ?? 0;
+		const scale = grad.scale ?? 1;
+
+		// Transform stop positions to account for position and scale.
+		// Default stops span 0% to 100%. Scale compresses/expands them,
+		// and position shifts them along the axis.
 		const colorStops = grad.colors
 			.map((color, i) => {
-				if (grad.stops && grad.stops[i] !== undefined) {
-					return `${color} ${grad.stops[i] * 100}%`;
-				}
-				return color;
+				const baseOffset = grad.stops?.[i] ?? i / (grad.colors.length - 1);
+				// Scale around center (0.5), then shift by position
+				const adjusted = (baseOffset - 0.5) / scale + 0.5 - position / 200;
+				return `${color} ${(adjusted * 100).toFixed(1)}%`;
 			})
 			.join(', ');
 
 		return `background-image: linear-gradient(${angle}deg, ${colorStops});`;
+	});
+
+	// Compute CSS clip-path for non-'round' corner shapes
+	let clipPathStyle = $derived.by(() => {
+		if (cornerShape === 'round' || !cornerRadius) return undefined;
+		const pathD = generateCornerPath(size!, cornerRadius!, cornerShape!);
+		return `path('${pathD}')`;
 	});
 
 	// Icon wrapper transform for offset and rotation
@@ -90,7 +96,11 @@
 </script>
 
 <div class="app-logo" style:width="{size}px" style:height="{size}px">
-	<div class="app-logo-square" style="{backgroundStyle} border-radius: {cornerRadius}%;">
+	<div
+		class="app-logo-square"
+		style="{backgroundStyle} {cornerShape === 'round' ? `border-radius: ${cornerRadius}%;` : ''}"
+		style:clip-path={clipPathStyle}
+	>
 		{#if iconHtml}
 			<div
 				class="app-logo-icon"
