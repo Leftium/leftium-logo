@@ -1,5 +1,5 @@
 import type { AppLogoConfig, AppLogoProps, CornerShape, GradientConfig } from './types.js';
-import { APP_LOGO_DEFAULTS } from './defaults.js';
+import { APP_LOGO_DEFAULTS, DEFAULT_EMOJI_STYLE } from './defaults.js';
 import { resolveIcon } from './iconify.js';
 import { applyColorMode } from './color-transform.js';
 import { generateCornerPath } from './squircle.js';
@@ -18,6 +18,7 @@ function resolveProps(config: AppLogoConfig, variant?: 'logo' | 'favicon'): Requ
 		iconOffsetX: overrides?.iconOffsetX ?? APP_LOGO_DEFAULTS.iconOffsetX,
 		iconOffsetY: overrides?.iconOffsetY ?? APP_LOGO_DEFAULTS.iconOffsetY,
 		iconRotation: overrides?.iconRotation ?? APP_LOGO_DEFAULTS.iconRotation,
+		grayscaleLightness: overrides?.grayscaleLightness ?? 100,
 		cornerRadius: overrides?.cornerRadius ?? config.cornerRadius ?? APP_LOGO_DEFAULTS.cornerRadius,
 		cornerShape: overrides?.cornerShape ?? config.cornerShape ?? APP_LOGO_DEFAULTS.cornerShape,
 		background: overrides?.background ?? config.background ?? APP_LOGO_DEFAULTS.background,
@@ -190,15 +191,17 @@ export async function generateAppLogoSvg(
 	const size = props.size;
 	const gradientId = 'app-logo-bg';
 
-	// Resolve icon
-	const resolved = await resolveIcon(props.icon);
+	// Resolve icon (pass emojiStyle for emoji auto-mapping)
+	const emojiStyle = config.emojiStyle ?? DEFAULT_EMOJI_STYLE;
+	const resolved = await resolveIcon(props.icon, emojiStyle);
 
 	// Apply color mode (supports all IconColorMode values)
 	const coloredContent = applyColorMode(
 		resolved.svgContent,
 		resolved.isMonochrome,
 		props.iconColorMode,
-		props.iconColor
+		props.iconColor,
+		props.grayscaleLightness
 	);
 
 	// Build SVG parts

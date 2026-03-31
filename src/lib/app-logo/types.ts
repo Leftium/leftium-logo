@@ -38,6 +38,7 @@ export interface AppLogoProps {
 	iconOffsetX?: number; // % horizontal offset from center, default: 0
 	iconOffsetY?: number; // % vertical offset from center, default: 0
 	iconRotation?: number; // degrees clockwise, default: 0 (Phase 2)
+	grayscaleLightness?: number; // lightness multiplier for grayscale modes, default: 100 (%)
 
 	// --- Square ---
 	cornerRadius?: number; // CSS border-radius as %, default: 0. Range: 0-50
@@ -56,6 +57,10 @@ export interface AppLogoConfig {
 	background?: AppLogoProps['background'];
 	cornerRadius?: number;
 	cornerShape?: CornerShape;
+
+	// Emoji rendering
+	emojiStyle?: string; // Iconify emoji set prefix (e.g. "twemoji", "noto")
+	// Default: "twemoji". Set to "native" to disable auto-mapping.
 
 	// Per-output overrides
 	logo?: Partial<AppLogoProps>;

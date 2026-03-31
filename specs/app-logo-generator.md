@@ -43,14 +43,14 @@ Iconify icons come in three flavors:
 
 The `iconColorMode` prop controls how colors are transformed:
 
-| Mode                   | Effect                                                     | `iconColor` used?    |
-| ---------------------- | ---------------------------------------------------------- | -------------------- |
-| `"auto"` (default)     | Monochrome → apply `iconColor`; multicolor → keep original | Only for monochrome  |
-| `"original"`           | All colors kept exactly as-is                              | No                   |
-| `"monochrome"`         | All fills/strokes → `iconColor` (flat silhouette)          | Yes                  |
-| `"grayscale"`          | Each color → luminance-equivalent gray                     | No                   |
-| `"grayscale-tint"`     | Grayscale, then tint toward `iconColor`                    | Yes (as tint hue)    |
-| `{ hue, saturation? }` | Remap all colors to shades of target hue                   | No (hue is explicit) |
+| Mode                   | Effect                                                                | `iconColor` used?    |
+| ---------------------- | --------------------------------------------------------------------- | -------------------- |
+| `"auto"` (default)     | Monochrome → apply `iconColor`; multicolor → keep original            | Only for monochrome  |
+| `"original"`           | All colors kept exactly as-is                                         | No                   |
+| `"monochrome"`         | All fills/strokes → `iconColor` (flat silhouette)                     | Yes                  |
+| `"grayscale"`          | Each color → luminance-equivalent gray; `grayscaleLightness` adjusts  | No                   |
+| `"grayscale-tint"`     | Grayscale, then tint toward `iconColor`; `grayscaleLightness` adjusts | Yes (tint)           |
+| `{ hue, saturation? }` | Remap all colors to shades of target hue                              | No (hue is explicit) |
 
 **Implementation**: Color transforms operate on the parsed SVG before rendering.
 Each `fill` and `stroke` attribute (except `"none"`) is converted to HSL, transformed
@@ -128,6 +128,9 @@ interface AppLogoProps {
 	iconOffsetX?: number; // % horizontal offset from center, default: 0
 	iconOffsetY?: number; // % vertical offset from center, default: 0
 	iconRotation?: number; // degrees clockwise, default: 0
+	grayscaleLightness?: number; // lightness multiplier for grayscale modes, default: 100
+	//   0-200 (%). 100 = no change, <100 = darker, >100 = lighter.
+	//   Only affects 'grayscale' and 'grayscale-tint' color modes.
 
 	// --- Square ---
 	cornerRadius?: number; // CSS border-radius as %, default: 0. Range: 0-50
@@ -390,7 +393,7 @@ Complete self-service tool with full asset export.
 
 **Scope:**
 
-- `/generate` page with full config UI (960px wide, overrides nimble.css default)
+- `/logo` page with full config UI (960px wide, overrides nimble.css default)
   - Unified 8-column controls grid (logo label | num | slider | reset | lock | fav-slider | fav-num | fav label)
     - Each `.ctrl-row` is an independent 8-col grid (`90px 54px 1fr 28px 36px 1fr 54px 90px`)
     - No CSS subgrid — subgrid caused all rows to inherit the icon textarea's height
@@ -449,9 +452,9 @@ src/lib/
     generate-png.ts           # added format: 'png' | 'webp' option
 
 src/routes/
-  generate/
+  logo/
     +layout.svelte            # --nc-content-width: 960px override
-    +page.svelte              # full generator UI (~2000 lines)
+    +page.svelte              # full generator UI (~2600 lines)
 ```
 
 **Dependencies (Phase 3):**
@@ -677,11 +680,11 @@ src/lib/
 Shareable URLs, JSON import/export, copy-ready code/HTML snippets, and
 cross-platform emoji rendering via Iconify auto-mapping.
 
-**Status: Pending**
+**Status: Complete**
 
 **Scope:**
 
-- Homepage link to `/generate` ✅ (already added)
+- Homepage link to `/logo` ✅ (already added)
 - Sticky preview row (previews stay visible while scrolling controls)
 - Config JSON import/export UI
 - Shareable URLs (hash-based config encoding)
@@ -790,7 +793,7 @@ link.
 **Format**: `#config=<base64url-encoded JSON>`
 
 ```
-https://logo.leftium.com/generate#config=eyJpY29uIjoibWRpOnJvY2tldC1sYXVuY2giLC...
+https://logo.leftium.com/logo#config=eyJpY29uIjoibWRpOnJvY2tldC1sYXVuY2giLC...
 ```
 
 - **Encoding**: `JSON.stringify(fullConfig)` → `btoa()` (with Unicode-safe
@@ -1039,22 +1042,34 @@ implements the codepoint → Iconify slug mapping (Strategy A/B above).
 ```
 src/lib/
   app-logo/
+    config-serialization.ts     # NEW: ColumnState, defaults, build/parse, URL hash, snippets
     iconify.ts                  # emoji case rewrite, resolveEmojiSlug()
-    types.ts                    # emojiStyle field on AppLogoConfig
-    defaults.ts                 # DEFAULT_EMOJI_STYLE = 'twemoji'
+    types.ts                    # emojiStyle + grayscaleLightness on AppLogoConfig/AppLogoProps
+    defaults.ts                 # DEFAULT_EMOJI_STYLE, EMOJI_SETS array
+    color-transform.ts          # grayscaleLightness multiplier in grayscale/grayscale-tint
+    generate-svg.ts             # grayscaleLightness passthrough to applyColorMode
+  AppLogo.svelte                # emojiStyle + grayscaleLightness props
+  tooltip.ts                    # NEW: Svelte action wrapping tippy.js
 
 src/routes/
-  generate/
+  logo/
     +page.svelte                # sticky preview, JSON import/export UI, URL hash
                                 # sync, Copy HTML/Svelte buttons, emoji style
-                                # picker grid, homepage link (done)
+                                # picker grid, grouped controls (<article> cards),
+                                # grayscale lightness slider, tippy tooltips,
+                                # disabled reset buttons at default values
 ```
 
 **Dependencies (Phase 4):**
 
-None required. The Iconify search API and existing fetch pipeline handle
-everything. If a CLDR name table is embedded for offline fallback, it adds
-~15KB to the bundle.
+| Package          | Purpose                                      | Required? |
+| ---------------- | -------------------------------------------- | --------- |
+| `tippy.js`       | Instant tooltips on Copy HTML/Svelte buttons | Yes       |
+| `@popperjs/core` | Positioning engine for tippy.js (types)      | Yes       |
+
+The Iconify search API and existing fetch pipeline handle emoji resolution.
+If a CLDR name table is embedded for offline fallback, it adds ~15KB to the
+bundle.
 
 **Implementation notes:**
 
@@ -1070,6 +1085,40 @@ everything. If a CLDR name table is embedded for offline fallback, it adds
   cell lazy-fetches its icon SVG on mount via `resolveIcon()`.
 - The `resolveEmojiSlug()` cache key includes the prefix so switching styles
   doesn't cause redundant lookups for already-resolved slugs.
+
+##### UI enhancements (added alongside Phase 4)
+
+**Grouped controls**: The flat controls grid is reorganized into three visual
+groups using nimble.css `<article>` card wrappers with `<header>` elements:
+
+| Group        | Fields                                                                                                 |
+| ------------ | ------------------------------------------------------------------------------------------------------ |
+| Icon / Emoji | Icon, Emoji Style, Icon Color, Color Mode, Hue, Saturation, Lightness, Icon Size, Offset X/Y, Rotation |
+| Corners      | Corner Radius, Corner K                                                                                |
+| Background   | Background toggle, Solid Color, Gradient Angle/Position/Scale                                          |
+
+Each group header uses the same 8-column grid as the control rows, with the
+group title spanning columns 1-3, a reset button in column 4, and a lock/unlock
+button in column 5 -- visually aligned with the per-row reset/lock buttons.
+
+- **Group reset**: Resets all fields in the group to `DEFAULT_STATE`. Disabled
+  (opacity 0.3) when all fields are already at defaults.
+- **Group lock**: Toggles all locks in the group. Shows locked icon when all
+  fields are locked; unlocked when any field is unlocked.
+- **Per-row reset buttons**: Now disabled (opacity 0.3, `pointer-events: none`)
+  when the individual field matches its default value.
+
+**Grayscale lightness**: A new `grayscaleLightness` prop (0-200%, default 100%)
+controls the OKLCH lightness multiplier for `'grayscale'` and `'grayscale-tint'`
+color modes. The slider row appears conditionally (same pattern as Hue/Saturation
+rows). This allows making grayscale icons lighter or darker without switching
+modes.
+
+**Tippy.js tooltips**: The Copy HTML and Copy Svelte buttons use tippy.js
+(`use:tooltip` Svelte action) instead of native `title` attributes. Tooltips
+show a monospace preview of the clipboard content with 80ms show delay (vs the
+browser's ~500-1000ms default for `title`). Tooltip content updates reactively
+as the config changes.
 
 ---
 

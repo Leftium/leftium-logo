@@ -7,6 +7,25 @@ export const LEFTIUM_GRADIENT: GradientConfig = {
 	angle: 45 // bottom-left -> top-right
 };
 
+/** Default emoji icon set for auto-mapping. "native" disables mapping. */
+export const DEFAULT_EMOJI_STYLE = 'twemoji';
+
+/** Emoji icon sets that support automatic emoji-to-Iconify name resolution */
+export const EMOJI_SETS = [
+	// Color sets
+	{ prefix: 'twemoji', name: 'Twitter Emoji', monochrome: false },
+	{ prefix: 'noto', name: 'Noto Emoji', monochrome: false },
+	{ prefix: 'openmoji', name: 'OpenMoji', monochrome: false },
+	{ prefix: 'fluent-emoji', name: 'Fluent Emoji', monochrome: false },
+	{ prefix: 'fluent-emoji-flat', name: 'Fluent Flat', monochrome: false },
+	{ prefix: 'emojione', name: 'Emoji One', monochrome: false },
+	{ prefix: 'noto-v1', name: 'Noto v1', monochrome: false },
+	{ prefix: 'emojione-v1', name: 'Emoji One v1', monochrome: false },
+	// Monochrome sets
+	{ prefix: 'emojione-monotone', name: 'Emoji One Mono', monochrome: true },
+	{ prefix: 'fluent-emoji-high-contrast', name: 'Fluent HC', monochrome: true }
+] as const;
+
 /** Default values for all AppLogo props */
 export const APP_LOGO_DEFAULTS: Required<
 	Pick<

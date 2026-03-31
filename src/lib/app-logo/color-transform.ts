@@ -42,11 +42,13 @@ function oklchToHex(l: number, c: number, h: number, alpha?: number): string {
 /**
  * Transform a single CSS color to grayscale using OKLCH.
  * Sets chroma to 0, preserving perceptual lightness.
+ * @param lightness Optional lightness multiplier (0-200), default 100 = no change
  */
-export function toGrayscale(color: string): string {
+export function toGrayscale(color: string, lightness: number = 100): string {
 	const oklch = parseToOklch(color);
 	if (!oklch) return color;
-	return oklchToHex(oklch.l, 0, 0, oklch.alpha);
+	const l = Math.min(1, Math.max(0, oklch.l * (lightness / 100)));
+	return oklchToHex(l, 0, 0, oklch.alpha);
 }
 
 /**
@@ -54,18 +56,20 @@ export function toGrayscale(color: string): string {
  *
  * The tint color's hue and chroma influence the result, while the original
  * color's lightness is preserved. This unifies a palette while keeping contrast.
+ * @param lightness Optional lightness multiplier (0-200), default 100 = no change
  */
-export function toGrayscaleTint(color: string, tintColor: string): string {
+export function toGrayscaleTint(color: string, tintColor: string, lightness: number = 100): string {
 	const oklch = parseToOklch(color);
 	if (!oklch) return color;
 
 	const tint = parseToOklch(tintColor);
 	if (!tint) return color;
 
-	// Use original lightness, tint's hue, and a fraction of tint's chroma
+	// Use original lightness (scaled by multiplier), tint's hue, and a fraction of tint's chroma
 	// Scale chroma by the ratio of original chroma to max, to preserve some variation
+	const l = Math.min(1, Math.max(0, oklch.l * (lightness / 100)));
 	const tintChroma = tint.c * 0.7; // 70% of tint chroma for a softer effect
-	return oklchToHex(oklch.l, tintChroma, tint.h, oklch.alpha);
+	return oklchToHex(l, tintChroma, tint.h, oklch.alpha);
 }
 
 /**
@@ -94,12 +98,15 @@ export function remapHue(color: string, targetHue: number, targetSaturation?: nu
  *
  * Color transforms operate on fill/stroke attribute values and style properties,
  * replacing each color with its transformed equivalent.
+ *
+ * @param grayscaleLightness Lightness multiplier for grayscale modes (0-200), default 100
  */
 export function applyColorMode(
 	svgContent: string,
 	isMonochrome: boolean,
 	colorMode: IconColorMode,
-	iconColor: string
+	iconColor: string,
+	grayscaleLightness: number = 100
 ): string {
 	// Handle simple string modes first
 	if (colorMode === 'original') {
@@ -130,11 +137,11 @@ export function applyColorMode(
 		const resolvedColor = color === 'currentColor' ? iconColor : color;
 
 		if (colorMode === 'grayscale') {
-			return toGrayscale(resolvedColor);
+			return toGrayscale(resolvedColor, grayscaleLightness);
 		}
 
 		if (colorMode === 'grayscale-tint') {
-			return toGrayscaleTint(resolvedColor, iconColor);
+			return toGrayscaleTint(resolvedColor, iconColor, grayscaleLightness);
 		}
 
 		// Object mode: { hue, saturation? }

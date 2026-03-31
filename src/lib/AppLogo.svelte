@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { AppLogoProps, GradientConfig } from './app-logo/types.js';
-	import { APP_LOGO_DEFAULTS } from './app-logo/defaults.js';
+	import { APP_LOGO_DEFAULTS, DEFAULT_EMOJI_STYLE } from './app-logo/defaults.js';
 	import { resolveIcon, type ResolvedIcon } from './app-logo/iconify.js';
 	import { applyColorMode } from './app-logo/color-transform.js';
 	import { generateCornerPath } from './app-logo/squircle.js';
@@ -13,11 +13,13 @@
 		iconOffsetX = APP_LOGO_DEFAULTS.iconOffsetX,
 		iconOffsetY = APP_LOGO_DEFAULTS.iconOffsetY,
 		iconRotation = APP_LOGO_DEFAULTS.iconRotation,
+		grayscaleLightness = 100,
 		cornerRadius = APP_LOGO_DEFAULTS.cornerRadius,
 		cornerShape = APP_LOGO_DEFAULTS.cornerShape,
 		background = APP_LOGO_DEFAULTS.background as AppLogoProps['background'],
-		size = APP_LOGO_DEFAULTS.size
-	}: AppLogoProps = $props();
+		size = APP_LOGO_DEFAULTS.size,
+		emojiStyle = DEFAULT_EMOJI_STYLE
+	}: AppLogoProps & { emojiStyle?: string } = $props();
 
 	// Resolved icon state — use $state.raw since this is replaced, not mutated
 	let resolved: ResolvedIcon | null = $state.raw(null);
@@ -25,11 +27,12 @@
 	// Fetch icon when the icon prop changes
 	$effect(() => {
 		const currentIcon = icon;
+		const currentEmojiStyle = emojiStyle;
 		resolved = null;
 
-		resolveIcon(currentIcon).then((result) => {
-			// Only update if icon hasn't changed while we were fetching
-			if (icon === currentIcon) {
+		resolveIcon(currentIcon, currentEmojiStyle).then((result) => {
+			// Only update if icon/emojiStyle hasn't changed while we were fetching
+			if (icon === currentIcon && emojiStyle === currentEmojiStyle) {
 				resolved = result;
 			}
 		});
@@ -39,7 +42,13 @@
 	let coloredSvgContent = $derived.by(() => {
 		const r = resolved;
 		if (!r) return '';
-		return applyColorMode(r.svgContent, r.isMonochrome, iconColorMode, iconColor);
+		return applyColorMode(
+			r.svgContent,
+			r.isMonochrome,
+			iconColorMode,
+			iconColor,
+			grayscaleLightness
+		);
 	});
 
 	// Build the full inline SVG with viewBox and 100% sizing

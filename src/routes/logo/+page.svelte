@@ -1,16 +1,28 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import AppLogo from '$lib/AppLogo.svelte';
-	import { LEFTIUM_GRADIENT } from '$lib/app-logo/defaults.js';
+	import { tooltip } from '$lib/tooltip.js';
 	import { generateAppLogoSvg } from '$lib/app-logo/generate-svg.js';
 	import { generateAppLogoPng } from '$lib/app-logo/generate-png.js';
 	import { generateZipKit } from '$lib/app-logo/generate-favicon-set.js';
-	import type {
-		AppLogoConfig,
-		CornerShape,
-		GradientConfig,
-		IconColorMode
-	} from '$lib/app-logo/types.js';
 	import { pngToIco } from '$lib/app-logo/generate-ico.js';
+	import {
+		type ColumnState,
+		DEFAULT_STATE,
+		DEFAULT_LOCKS,
+		cornerKToShape,
+		cornerKLabel,
+		iconColorModeFromFlat,
+		backgroundFromFlat,
+		buildVariantConfig,
+		buildFullConfig,
+		generateSvelteSnippet,
+		generateHtmlSnippet,
+		encodeConfigToHash,
+		decodeConfigFromHash,
+		configToUIState
+	} from '$lib/app-logo/config-serialization.js';
+	import { DEFAULT_EMOJI_STYLE, EMOJI_SETS, detectIconSource } from '$lib/app-logo/defaults.js';
 
 	// ─── Lock icons (icomoon-free, inlined to avoid async fetch) ─────────────
 
@@ -20,48 +32,6 @@
 	// overflow="visible" so the open shackle extends past the viewBox.
 	const ICON_LOCK = `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16"><path fill="currentColor" transform="translate(3,0)" d="M9.25 7H9V4c0-1.654-1.346-3-3-3H4C2.346 1 1 2.346 1 4v3H.75a.753.753 0 0 0-.75.75v7.5c0 .412.338.75.75.75h8.5c.412 0 .75-.338.75-.75v-7.5A.753.753 0 0 0 9.25 7M3 4c0-.551.449-1 1-1h2c.551 0 1 .449 1 1v3H3z"/></svg>`;
 	const ICON_UNLOCK = `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16" overflow="visible"><path fill="currentColor" transform="translate(3,0)" d="M12 1c1.654 0 3 1.346 3 3v3h-2V4c0-.551-.449-1-1-1h-2c-.551 0-1 .449-1 1v3h.25c.412 0 .75.338.75.75v7.5c0 .412-.338.75-.75.75H.75a.753.753 0 0 1-.75-.75v-7.5C0 7.338.338 7 .75 7H7V4c0-1.654 1.346-3 3-3z"/></svg>`;
-
-	// ─── Types ────────────────────────────────────────────────────────────────
-
-	interface ColumnState {
-		icon: string;
-		iconColor: string;
-		iconColorModeKey: string;
-		hueValue: number;
-		saturationValue: number;
-		iconSize: number;
-		iconOffsetX: number;
-		iconOffsetY: number;
-		iconRotation: number;
-		cornerRadius: number;
-		cornerK: number;
-		solidColor: string;
-		useGradient: boolean;
-		gradientAngle: number;
-		gradientPosition: number;
-		gradientScale: number;
-	}
-
-	// ─── Default state ─────────────────────────────────────────────────────────
-
-	const DEFAULT_STATE: ColumnState = {
-		icon: 'fxemoji:rocket',
-		iconColor: '#ffffff',
-		iconColorModeKey: 'auto',
-		hueValue: 210,
-		saturationValue: 70,
-		iconSize: 60,
-		iconOffsetX: 0,
-		iconOffsetY: 0,
-		iconRotation: 0,
-		cornerRadius: 50,
-		cornerK: 2,
-		solidColor: '#0029c1',
-		useGradient: true,
-		gradientAngle: 45,
-		gradientPosition: 0,
-		gradientScale: 1
-	};
 
 	// ─── Column State ──────────────────────────────────────────────────────────
 
@@ -73,29 +43,14 @@
 
 	let appName = $state('My App');
 	let appShortName = $state('App');
+	let emojiStyle = $state(DEFAULT_EMOJI_STYLE);
 	let copying = $state<'logo' | 'favicon' | null>(null);
 	let downloading = $state(false);
 
-	// ─── Lock State ───────────────────────────────────────────────────────────
+	// Is the current logo icon an emoji?
+	let isEmojiIcon = $derived(detectIconSource(logo.icon) === 'emoji');
 
-	const DEFAULT_LOCKS: Record<keyof ColumnState, boolean> = {
-		icon: true,
-		iconColor: true,
-		iconColorModeKey: true,
-		hueValue: true,
-		saturationValue: true,
-		iconSize: true,
-		iconOffsetX: true,
-		iconOffsetY: true,
-		iconRotation: true,
-		cornerRadius: true,
-		cornerK: true,
-		solidColor: true,
-		useGradient: true,
-		gradientAngle: true,
-		gradientPosition: true,
-		gradientScale: true
-	};
+	// ─── Lock State ───────────────────────────────────────────────────────────
 
 	let locks = $state<Record<keyof ColumnState, boolean>>({ ...DEFAULT_LOCKS });
 
@@ -110,6 +65,9 @@
 		iconOffsetX: locks.iconOffsetX ? logo.iconOffsetX : favicon.iconOffsetX,
 		iconOffsetY: locks.iconOffsetY ? logo.iconOffsetY : favicon.iconOffsetY,
 		iconRotation: locks.iconRotation ? logo.iconRotation : favicon.iconRotation,
+		grayscaleLightness: locks.grayscaleLightness
+			? logo.grayscaleLightness
+			: favicon.grayscaleLightness,
 		cornerRadius: locks.cornerRadius ? logo.cornerRadius : favicon.cornerRadius,
 		cornerK: locks.cornerK ? logo.cornerK : favicon.cornerK,
 		solidColor: locks.solidColor ? logo.solidColor : favicon.solidColor,
@@ -128,128 +86,33 @@
 		}
 	}
 
-	// ─── Derived: Logo ────────────────────────────────────────────────────────
+	// ─── Derived: Logo props ─────────────────────────────────────────────────
 
-	let logoCornerShape: CornerShape = $derived(
-		logo.cornerK === 1
-			? 'round'
-			: logo.cornerK === 0
-				? 'bevel'
-				: (`superellipse(${logo.cornerK})` as CornerShape)
+	let logoCornerShape = $derived(cornerKToShape(logo.cornerK));
+	let logoIconColorMode = $derived(
+		iconColorModeFromFlat(logo.iconColorModeKey, logo.hueValue, logo.saturationValue)
 	);
+	let logoBackground = $derived(backgroundFromFlat(logo));
 
-	let logoIconColorMode: IconColorMode = $derived(
-		logo.iconColorModeKey === 'hue'
-			? { hue: logo.hueValue, saturation: logo.saturationValue }
-			: (logo.iconColorModeKey as IconColorMode)
+	// ─── Derived: Favicon props ──────────────────────────────────────────────
+
+	let faviconCornerShape = $derived(cornerKToShape(effectiveFavicon.cornerK));
+	let faviconIconColorMode = $derived(
+		iconColorModeFromFlat(
+			effectiveFavicon.iconColorModeKey,
+			effectiveFavicon.hueValue,
+			effectiveFavicon.saturationValue
+		)
 	);
-
-	let logoBackground: string | GradientConfig = $derived.by(() => {
-		if (!logo.useGradient) return logo.solidColor;
-		return {
-			...LEFTIUM_GRADIENT,
-			angle: logo.gradientAngle,
-			position: logo.gradientPosition,
-			scale: logo.gradientScale
-		} satisfies GradientConfig;
-	});
-
-	// ─── Derived: Favicon (using effectiveFavicon) ────────────────────────────
-
-	let faviconCornerShape: CornerShape = $derived(
-		effectiveFavicon.cornerK === 1
-			? 'round'
-			: effectiveFavicon.cornerK === 0
-				? 'bevel'
-				: (`superellipse(${effectiveFavicon.cornerK})` as CornerShape)
-	);
-
-	let faviconIconColorMode: IconColorMode = $derived(
-		effectiveFavicon.iconColorModeKey === 'hue'
-			? { hue: effectiveFavicon.hueValue, saturation: effectiveFavicon.saturationValue }
-			: (effectiveFavicon.iconColorModeKey as IconColorMode)
-	);
-
-	let faviconBackground: string | GradientConfig = $derived.by(() => {
-		if (!effectiveFavicon.useGradient) return effectiveFavicon.solidColor;
-		return {
-			...LEFTIUM_GRADIENT,
-			angle: effectiveFavicon.gradientAngle,
-			position: effectiveFavicon.gradientPosition,
-			scale: effectiveFavicon.gradientScale
-		} satisfies GradientConfig;
-	});
+	let faviconBackground = $derived(backgroundFromFlat(effectiveFavicon));
 
 	// ─── Derived: Export Configs ──────────────────────────────────────────────
 
-	let logoExportConfig: AppLogoConfig = $derived({
-		icon: logo.icon,
-		iconColor: logo.iconColor,
-		iconColorMode: logoIconColorMode,
-		background: logoBackground,
-		cornerRadius: logo.cornerRadius,
-		cornerShape: logoCornerShape,
-		logo: {
-			iconSize: logo.iconSize,
-			iconOffsetX: logo.iconOffsetX,
-			iconOffsetY: logo.iconOffsetY,
-			iconRotation: logo.iconRotation
-		}
-	});
-
-	let faviconExportConfig: AppLogoConfig = $derived({
-		icon: effectiveFavicon.icon,
-		iconColor: effectiveFavicon.iconColor,
-		iconColorMode: faviconIconColorMode,
-		background: faviconBackground,
-		cornerRadius: effectiveFavicon.cornerRadius,
-		cornerShape: faviconCornerShape,
-		favicon: {
-			iconSize: effectiveFavicon.iconSize,
-			iconOffsetX: effectiveFavicon.iconOffsetX,
-			iconOffsetY: effectiveFavicon.iconOffsetY,
-			iconRotation: effectiveFavicon.iconRotation
-		}
-	});
-
-	let fullConfig: AppLogoConfig = $derived({
-		icon: logo.icon,
-		iconColor: logo.iconColor,
-		iconColorMode: logoIconColorMode,
-		background: logoBackground,
-		cornerRadius: logo.cornerRadius,
-		cornerShape: logoCornerShape,
-		logo: {
-			iconSize: logo.iconSize,
-			iconOffsetX: logo.iconOffsetX,
-			iconOffsetY: logo.iconOffsetY,
-			iconRotation: logo.iconRotation
-		},
-		favicon: {
-			icon: effectiveFavicon.icon,
-			iconColor: effectiveFavicon.iconColor,
-			iconColorMode: faviconIconColorMode,
-			background: faviconBackground,
-			cornerRadius: effectiveFavicon.cornerRadius,
-			cornerShape: faviconCornerShape,
-			iconSize: effectiveFavicon.iconSize,
-			iconOffsetX: effectiveFavicon.iconOffsetX,
-			iconOffsetY: effectiveFavicon.iconOffsetY,
-			iconRotation: effectiveFavicon.iconRotation
-		}
-	});
+	let logoExportConfig = $derived(buildVariantConfig(logo, 'logo', emojiStyle));
+	let faviconExportConfig = $derived(buildVariantConfig(effectiveFavicon, 'favicon', emojiStyle));
+	let fullConfig = $derived(buildFullConfig(logo, effectiveFavicon, locks, emojiStyle));
 
 	// ─── Helpers ──────────────────────────────────────────────────────────────
-
-	function cornerKLabel(k: number): string {
-		if (k === -10) return 'notch';
-		if (k === -1) return 'scoop';
-		if (k === 0) return 'bevel';
-		if (k === 1) return 'round';
-		if (k === 2) return 'squircle';
-		if (k === 10) return 'square';
-		return `K=${k}`;
-	}
 
 	function downloadBlob(blob: Blob, filename: string) {
 		const url = URL.createObjectURL(blob);
@@ -327,6 +190,34 @@
 		}
 	}
 
+	// ─── Copy Snippets ───────────────────────────────────────────────────────
+
+	let snippetCopied = $state<'html' | 'svelte' | null>(null);
+
+	async function copyHtmlSnippet() {
+		snippetCopied = 'html';
+		try {
+			const html = generateHtmlSnippet({ name: appName, shortName: appShortName });
+			await navigator.clipboard.writeText(html);
+		} finally {
+			setTimeout(() => {
+				snippetCopied = null;
+			}, 1500);
+		}
+	}
+
+	async function copySvelteSnippet() {
+		snippetCopied = 'svelte';
+		try {
+			const svelte = generateSvelteSnippet(fullConfig);
+			await navigator.clipboard.writeText(svelte);
+		} finally {
+			setTimeout(() => {
+				snippetCopied = null;
+			}, 1500);
+		}
+	}
+
 	// ─── Download All ─────────────────────────────────────────────────────────
 
 	async function downloadAll() {
@@ -344,99 +235,281 @@
 	function resetLogoField<K extends keyof ColumnState>(field: K) {
 		logo[field] = DEFAULT_STATE[field] as ColumnState[K];
 	}
+
+	function isAtDefault<K extends keyof ColumnState>(field: K): boolean {
+		return logo[field] === DEFAULT_STATE[field];
+	}
+
+	// ─── Control Groups ──────────────────────────────────────────────────────
+
+	const ICON_GROUP_FIELDS: (keyof ColumnState)[] = [
+		'icon',
+		'iconColor',
+		'iconColorModeKey',
+		'hueValue',
+		'saturationValue',
+		'grayscaleLightness',
+		'iconSize',
+		'iconOffsetX',
+		'iconOffsetY',
+		'iconRotation'
+	];
+
+	const CORNER_GROUP_FIELDS: (keyof ColumnState)[] = ['cornerRadius', 'cornerK'];
+
+	const BG_GROUP_FIELDS: (keyof ColumnState)[] = [
+		'solidColor',
+		'useGradient',
+		'gradientAngle',
+		'gradientPosition',
+		'gradientScale'
+	];
+
+	function isGroupAtDefaults(fields: (keyof ColumnState)[]): boolean {
+		return fields.every((f) => logo[f] === DEFAULT_STATE[f]);
+	}
+
+	function areAllGroupFieldsLocked(fields: (keyof ColumnState)[]): boolean {
+		return fields.every((f) => locks[f]);
+	}
+
+	function resetGroup(fields: (keyof ColumnState)[]) {
+		for (const f of fields) {
+			(logo as Record<keyof ColumnState, unknown>)[f] = DEFAULT_STATE[f];
+		}
+	}
+
+	function toggleGroupLocks(fields: (keyof ColumnState)[]) {
+		const allLocked = areAllGroupFieldsLocked(fields);
+		for (const f of fields) {
+			const wasLocked = locks[f];
+			locks[f] = !allLocked;
+			// When locking, snap favicon value to logo
+			if (!wasLocked && locks[f]) {
+				(favicon as Record<keyof ColumnState, unknown>)[f] = logo[f];
+			}
+		}
+	}
+
+	let iconGroupAtDefaults = $derived(isGroupAtDefaults(ICON_GROUP_FIELDS));
+	let cornerGroupAtDefaults = $derived(isGroupAtDefaults(CORNER_GROUP_FIELDS));
+	let bgGroupAtDefaults = $derived(isGroupAtDefaults(BG_GROUP_FIELDS));
+
+	let iconGroupAllLocked = $derived(areAllGroupFieldsLocked(ICON_GROUP_FIELDS));
+	let cornerGroupAllLocked = $derived(areAllGroupFieldsLocked(CORNER_GROUP_FIELDS));
+	let bgGroupAllLocked = $derived(areAllGroupFieldsLocked(BG_GROUP_FIELDS));
+
+	// Is grayscale mode active? (show lightness slider)
+	let logoIsGrayscaleMode = $derived(
+		logo.iconColorModeKey === 'grayscale' || logo.iconColorModeKey === 'grayscale-tint'
+	);
+	let favIsGrayscaleMode = $derived(
+		favicon.iconColorModeKey === 'grayscale' || favicon.iconColorModeKey === 'grayscale-tint'
+	);
+
+	// ─── Snippet preview for tooltips ────────────────────────────────────────
+
+	let htmlSnippetPreview = $derived(
+		generateHtmlSnippet({ name: appName, shortName: appShortName })
+	);
+	let svelteSnippetPreview = $derived(generateSvelteSnippet(fullConfig));
+
+	// ─── Config import/export ─────────────────────────────────────────────────
+
+	let configJsonText = $state('');
+	let configImportError = $state('');
+	let configCopied = $state<'json' | 'link' | null>(null);
+
+	function applyConfig(config: ReturnType<typeof configToUIState>) {
+		// Apply to state — assign each field individually for reactivity
+		const keys = Object.keys(DEFAULT_STATE) as (keyof ColumnState)[];
+		for (const key of keys) {
+			(logo as Record<keyof ColumnState, unknown>)[key] = config.logo[key];
+			(favicon as Record<keyof ColumnState, unknown>)[key] = config.favicon[key];
+			locks[key] = config.locks[key];
+		}
+		emojiStyle = config.emojiStyle;
+	}
+
+	function copyConfigJson() {
+		configCopied = 'json';
+		const json = JSON.stringify(fullConfig, null, '\t');
+		navigator.clipboard.writeText(json);
+		setTimeout(() => {
+			configCopied = null;
+		}, 1500);
+	}
+
+	function copyLink() {
+		configCopied = 'link';
+		const hash = encodeConfigToHash(fullConfig);
+		const url = `${window.location.origin}${window.location.pathname}#config=${hash}`;
+		navigator.clipboard.writeText(url);
+		setTimeout(() => {
+			configCopied = null;
+		}, 1500);
+	}
+
+	function importConfig() {
+		configImportError = '';
+		try {
+			const parsed = JSON.parse(configJsonText);
+			if (!parsed || typeof parsed.icon !== 'string') {
+				configImportError = 'Invalid config: missing "icon" field.';
+				return;
+			}
+			const uiState = configToUIState(parsed);
+			applyConfig(uiState);
+			configJsonText = '';
+		} catch {
+			configImportError = 'Invalid JSON. Please paste a valid config.';
+		}
+	}
+
+	// ─── URL hash sync ───────────────────────────────────────────────────────
+
+	let hashSyncReady = false;
+
+	// Load config from URL hash on mount
+	onMount(() => {
+		const hash = window.location.hash;
+		if (hash.startsWith('#config=')) {
+			const encoded = hash.slice('#config='.length);
+			const config = decodeConfigFromHash(encoded);
+			if (config) {
+				const uiState = configToUIState(config);
+				applyConfig(uiState);
+			}
+		}
+		// Enable hash writing after initial load is applied
+		// Use a microtask so the effect setup sees hashSyncReady = true
+		// only after the imported state has settled
+		queueMicrotask(() => {
+			hashSyncReady = true;
+		});
+	});
+
+	// Debounced hash update when config changes
+	let hashUpdateTimer: ReturnType<typeof setTimeout> | undefined;
+	$effect(() => {
+		// Read fullConfig to create a dependency
+		const config = fullConfig;
+		if (!hashSyncReady) return;
+		// Debounce at 500ms
+		clearTimeout(hashUpdateTimer);
+		hashUpdateTimer = setTimeout(() => {
+			const hash = encodeConfigToHash(config);
+			history.replaceState(null, '', `#config=${hash}`);
+		}, 500);
+	});
 </script>
 
 <main>
-	<!-- ── Preview row ─────────────────────────────────────────────────── -->
-	<div class="preview-row">
-		<div class="preview-panel">
-			<div class="checkerboard">
-				<AppLogo
-					icon={logo.icon}
-					iconColor={logo.iconColor}
-					iconColorMode={logoIconColorMode}
-					iconSize={logo.iconSize}
-					iconOffsetX={logo.iconOffsetX}
-					iconOffsetY={logo.iconOffsetY}
-					iconRotation={logo.iconRotation}
-					cornerRadius={logo.cornerRadius}
-					cornerShape={logoCornerShape}
-					background={logoBackground}
-					size={256}
-				/>
+	<!-- ── Sticky preview ──────────────────────────────────────────────── -->
+	<div class="preview-sticky">
+		<div class="preview-row">
+			<div class="preview-panel">
+				<div class="checkerboard">
+					<AppLogo
+						icon={logo.icon}
+						iconColor={logo.iconColor}
+						iconColorMode={logoIconColorMode}
+						iconSize={logo.iconSize}
+						iconOffsetX={logo.iconOffsetX}
+						iconOffsetY={logo.iconOffsetY}
+						iconRotation={logo.iconRotation}
+						grayscaleLightness={logo.grayscaleLightness}
+						cornerRadius={logo.cornerRadius}
+						cornerShape={logoCornerShape}
+						background={logoBackground}
+						size={256}
+						{emojiStyle}
+					/>
+				</div>
+				<h2>Logo</h2>
 			</div>
-			<div class="preview-actions">
-				<button onclick={copyLogoPng} class:active={copying === 'logo'}>
-					{copying === 'logo' ? 'Copied!' : 'Copy PNG'}
-				</button>
-				<button onclick={downloadLogoSvg}>SVG</button>
-				<button onclick={downloadLogoPng}>PNG</button>
-				<button onclick={downloadLogoWebp}>WebP</button>
+
+			<div class="preview-gap"></div>
+
+			<div class="preview-panel">
+				<div class="checkerboard favicon-preview">
+					<div class="favicon-size">
+						<AppLogo
+							icon={effectiveFavicon.icon}
+							iconColor={effectiveFavicon.iconColor}
+							iconColorMode={faviconIconColorMode}
+							iconSize={effectiveFavicon.iconSize}
+							iconOffsetX={effectiveFavicon.iconOffsetX}
+							iconOffsetY={effectiveFavicon.iconOffsetY}
+							iconRotation={effectiveFavicon.iconRotation}
+							grayscaleLightness={effectiveFavicon.grayscaleLightness}
+							cornerRadius={effectiveFavicon.cornerRadius}
+							cornerShape={faviconCornerShape}
+							background={faviconBackground}
+							size={96}
+							{emojiStyle}
+						/>
+						<span class="size-label">3×</span>
+					</div>
+					<div class="favicon-size">
+						<AppLogo
+							icon={effectiveFavicon.icon}
+							iconColor={effectiveFavicon.iconColor}
+							iconColorMode={faviconIconColorMode}
+							iconSize={effectiveFavicon.iconSize}
+							iconOffsetX={effectiveFavicon.iconOffsetX}
+							iconOffsetY={effectiveFavicon.iconOffsetY}
+							iconRotation={effectiveFavicon.iconRotation}
+							grayscaleLightness={effectiveFavicon.grayscaleLightness}
+							cornerRadius={effectiveFavicon.cornerRadius}
+							cornerShape={faviconCornerShape}
+							background={faviconBackground}
+							size={32}
+							{emojiStyle}
+						/>
+						<span class="size-label">32px</span>
+					</div>
+					<div class="favicon-size">
+						<AppLogo
+							icon={effectiveFavicon.icon}
+							iconColor={effectiveFavicon.iconColor}
+							iconColorMode={faviconIconColorMode}
+							iconSize={effectiveFavicon.iconSize}
+							iconOffsetX={effectiveFavicon.iconOffsetX}
+							iconOffsetY={effectiveFavicon.iconOffsetY}
+							iconRotation={effectiveFavicon.iconRotation}
+							grayscaleLightness={effectiveFavicon.grayscaleLightness}
+							cornerRadius={effectiveFavicon.cornerRadius}
+							cornerShape={faviconCornerShape}
+							background={faviconBackground}
+							size={16}
+							{emojiStyle}
+						/>
+						<span class="size-label">16px</span>
+					</div>
+				</div>
+				<h2>Favicon</h2>
 			</div>
-			<h2>Logo</h2>
 		</div>
+	</div>
 
-		<div class="preview-gap"></div>
-
-		<div class="preview-panel">
-			<div class="checkerboard favicon-preview">
-				<div class="favicon-size">
-					<AppLogo
-						icon={effectiveFavicon.icon}
-						iconColor={effectiveFavicon.iconColor}
-						iconColorMode={faviconIconColorMode}
-						iconSize={effectiveFavicon.iconSize}
-						iconOffsetX={effectiveFavicon.iconOffsetX}
-						iconOffsetY={effectiveFavicon.iconOffsetY}
-						iconRotation={effectiveFavicon.iconRotation}
-						cornerRadius={effectiveFavicon.cornerRadius}
-						cornerShape={faviconCornerShape}
-						background={faviconBackground}
-						size={96}
-					/>
-					<span class="size-label">3×</span>
-				</div>
-				<div class="favicon-size">
-					<AppLogo
-						icon={effectiveFavicon.icon}
-						iconColor={effectiveFavicon.iconColor}
-						iconColorMode={faviconIconColorMode}
-						iconSize={effectiveFavicon.iconSize}
-						iconOffsetX={effectiveFavicon.iconOffsetX}
-						iconOffsetY={effectiveFavicon.iconOffsetY}
-						iconRotation={effectiveFavicon.iconRotation}
-						cornerRadius={effectiveFavicon.cornerRadius}
-						cornerShape={faviconCornerShape}
-						background={faviconBackground}
-						size={32}
-					/>
-					<span class="size-label">32px</span>
-				</div>
-				<div class="favicon-size">
-					<AppLogo
-						icon={effectiveFavicon.icon}
-						iconColor={effectiveFavicon.iconColor}
-						iconColorMode={faviconIconColorMode}
-						iconSize={effectiveFavicon.iconSize}
-						iconOffsetX={effectiveFavicon.iconOffsetX}
-						iconOffsetY={effectiveFavicon.iconOffsetY}
-						iconRotation={effectiveFavicon.iconRotation}
-						cornerRadius={effectiveFavicon.cornerRadius}
-						cornerShape={faviconCornerShape}
-						background={faviconBackground}
-						size={16}
-					/>
-					<span class="size-label">16px</span>
-				</div>
-			</div>
-			<div class="preview-actions">
-				<button onclick={copyFaviconPng} class:active={copying === 'favicon'}>
-					{copying === 'favicon' ? 'Copied!' : 'Copy PNG'}
-				</button>
-				<button onclick={downloadFaviconIco}>ICO</button>
-				<button onclick={downloadFaviconSvg}>SVG</button>
-			</div>
-			<h2>Favicon</h2>
+	<!-- ── Preview action buttons (scroll normally) ───────────────────── -->
+	<div class="preview-actions-row">
+		<div class="preview-actions">
+			<button onclick={copyLogoPng} class:active={copying === 'logo'}>
+				{copying === 'logo' ? 'Copied!' : 'Copy PNG'}
+			</button>
+			<button onclick={downloadLogoSvg}>SVG</button>
+			<button onclick={downloadLogoPng}>PNG</button>
+			<button onclick={downloadLogoWebp}>WebP</button>
+		</div>
+		<div class="preview-actions-gap"></div>
+		<div class="preview-actions">
+			<button onclick={copyFaviconPng} class:active={copying === 'favicon'}>
+				{copying === 'favicon' ? 'Copied!' : 'Copy PNG'}
+			</button>
+			<button onclick={downloadFaviconIco}>ICO</button>
+			<button onclick={downloadFaviconSvg}>SVG</button>
 		</div>
 	</div>
 
@@ -453,959 +526,1178 @@
 		8: fav number (54px)
 	-->
 	<div class="controls-grid">
-		<!-- ════════════════ ICON ════════════════ -->
-		<div class="ctrl-row icon-row">
-			<div class="logo-icon-wrap">
-				<span class="icon-label">Icon</span>
-				<div class="icon-input-group">
-					<textarea
-						class="icon-input"
-						bind:value={logo.icon}
-						rows={3}
-						placeholder="Iconify ID or paste SVG..."
-					></textarea>
-					<a
-						href="https://icon-sets.iconify.design"
-						target="_blank"
-						rel="noopener"
-						class="browse-link">Browse icons →</a
-					>
-				</div>
-			</div>
-			<button
-				class="reset-btn col-reset"
-				onclick={() => resetLogoField('icon')}
-				title="Reset to default">↺</button
-			>
-			<div class="lock-col col-lock">
+		<!-- ══ GROUP: ICON / EMOJI ═══════════════════════════════════════ -->
+		<article class="control-group">
+			<header>
+				<span class="group-title">Icon / Emoji</span>
 				<button
-					class="lock-btn"
-					class:locked={locks.icon}
-					onclick={() => toggleLock('icon')}
-					title={locks.icon ? 'Locked to logo' : 'Unlock favicon'}
+					class="group-btn reset-btn"
+					onclick={() => resetGroup(ICON_GROUP_FIELDS)}
+					disabled={iconGroupAtDefaults}
+					title="Reset all icon fields to defaults">↺</button
+				>
+				<button
+					class="group-btn lock-btn"
+					class:locked={iconGroupAllLocked}
+					onclick={() => toggleGroupLocks(ICON_GROUP_FIELDS)}
+					title={iconGroupAllLocked ? 'Unlock all icon fields' : 'Lock all icon fields'}
 				>
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html locks.icon ? ICON_LOCK : ICON_UNLOCK}
+					{@html iconGroupAllLocked ? ICON_LOCK : ICON_UNLOCK}
 				</button>
-			</div>
-			<div class="fav-icon-wrap" class:fav-dimmed={locks.icon}>
-				<div class="icon-input-group">
-					<textarea
-						class="icon-input"
-						bind:value={favicon.icon}
-						rows={3}
-						placeholder="Iconify ID or paste SVG..."
-						disabled={locks.icon}
-					></textarea>
-					{#if !locks.icon}
+			</header>
+
+			<!-- ════════════════ ICON ════════════════ -->
+			<div class="ctrl-row icon-row">
+				<div class="logo-icon-wrap">
+					<span class="icon-label">Icon</span>
+					<div class="icon-input-group">
+						<textarea
+							class="icon-input"
+							bind:value={logo.icon}
+							rows={3}
+							placeholder="Iconify ID or paste SVG..."
+						></textarea>
 						<a
 							href="https://icon-sets.iconify.design"
 							target="_blank"
 							rel="noopener"
 							class="browse-link">Browse icons →</a
 						>
-					{/if}
+					</div>
 				</div>
-				<span class="fav-icon-label">Icon</span>
-			</div>
-		</div>
-
-		<!-- ════════════════ ICON COLOR ════════════════ -->
-		<div class="ctrl-row">
-			<span class="col-logo-label row-label">Icon Color</span>
-			<span class="col-logo-num"></span>
-			<div class="col-logo-slider color-area">
-				<input type="color" bind:value={logo.iconColor} class="color-swatch" />
-				<span class="color-hex">{logo.iconColor}</span>
-			</div>
-			<button class="reset-btn col-reset" onclick={() => resetLogoField('iconColor')} title="Reset"
-				>↺</button
-			>
-			<div class="lock-col col-lock">
-				<button
-					class="lock-btn"
-					class:locked={locks.iconColor}
-					onclick={() => toggleLock('iconColor')}
-					title={locks.iconColor ? 'Locked to logo' : 'Unlock favicon'}
-				>
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html locks.iconColor ? ICON_LOCK : ICON_UNLOCK}
-				</button>
-			</div>
-			<div class="col-fav-slider color-area" class:fav-dimmed={locks.iconColor}>
-				<input
-					type="color"
-					bind:value={favicon.iconColor}
-					class="color-swatch"
-					disabled={locks.iconColor}
-				/>
-				<span class="color-hex">{favicon.iconColor}</span>
-			</div>
-			<span class="col-fav-num"></span>
-			<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.iconColor}>
-				Icon Color
-			</span>
-		</div>
-
-		<!-- ════════════════ COLOR MODE ════════════════ -->
-		<div class="ctrl-row">
-			<span class="col-logo-label row-label">Color Mode</span>
-			<span class="col-logo-num"></span>
-			<div class="col-logo-slider">
-				<select bind:value={logo.iconColorModeKey} class="mode-select">
-					<option value="auto">auto</option>
-					<option value="original">original</option>
-					<option value="monochrome">monochrome</option>
-					<option value="grayscale">grayscale</option>
-					<option value="grayscale-tint">grayscale-tint</option>
-					<option value="hue">hue remap</option>
-				</select>
-			</div>
-			<span class="col-reset"></span>
-			<div class="lock-col col-lock">
-				<button
-					class="lock-btn"
-					class:locked={locks.iconColorModeKey}
-					onclick={() => toggleLock('iconColorModeKey')}
-					title={locks.iconColorModeKey ? 'Locked to logo' : 'Unlock favicon'}
-				>
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html locks.iconColorModeKey ? ICON_LOCK : ICON_UNLOCK}
-				</button>
-			</div>
-			<div class="col-fav-slider" class:fav-dimmed={locks.iconColorModeKey}>
-				<select
-					bind:value={favicon.iconColorModeKey}
-					class="mode-select"
-					disabled={locks.iconColorModeKey}
-				>
-					<option value="auto">auto</option>
-					<option value="original">original</option>
-					<option value="monochrome">monochrome</option>
-					<option value="grayscale">grayscale</option>
-					<option value="grayscale-tint">grayscale-tint</option>
-					<option value="hue">hue remap</option>
-				</select>
-			</div>
-			<span class="col-fav-num"></span>
-			<span
-				class="col-fav-label row-label fav-side-label"
-				class:fav-dimmed={locks.iconColorModeKey}
-			>
-				Color Mode
-			</span>
-		</div>
-
-		<!-- ════════════════ HUE (conditional) ════════════════ -->
-		{#if logo.iconColorModeKey === 'hue' || (!locks.iconColorModeKey && favicon.iconColorModeKey === 'hue')}
-			<div class="ctrl-row">
-				<span class="col-logo-label row-label">Hue</span>
-				{#if logo.iconColorModeKey === 'hue'}
-					<input
-						type="number"
-						min="0"
-						max="360"
-						bind:value={logo.hueValue}
-						class="ctrl-number col-logo-num"
-					/>
-					<input
-						type="range"
-						min="0"
-						max="360"
-						bind:value={logo.hueValue}
-						class="ctrl-slider col-logo-slider"
-					/>
-				{:else}
-					<span class="col-logo-num"></span>
-					<span class="col-logo-slider"></span>
-				{/if}
-				<button class="reset-btn col-reset" onclick={() => resetLogoField('hueValue')} title="Reset"
-					>↺</button
-				>
-				<div class="lock-col col-lock">
-					<button
-						class="lock-btn"
-						class:locked={locks.hueValue}
-						onclick={() => toggleLock('hueValue')}
-						title={locks.hueValue ? 'Locked to logo' : 'Unlock favicon'}
-					>
-						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-						{@html locks.hueValue ? ICON_LOCK : ICON_UNLOCK}
-					</button>
-				</div>
-				{#if !locks.hueValue && favicon.iconColorModeKey === 'hue'}
-					<input
-						type="range"
-						min="0"
-						max="360"
-						bind:value={favicon.hueValue}
-						class="ctrl-slider col-fav-slider"
-					/>
-					<input
-						type="number"
-						min="0"
-						max="360"
-						bind:value={favicon.hueValue}
-						class="ctrl-number col-fav-num"
-					/>
-					<span class="col-fav-label row-label fav-side-label">Hue</span>
-				{:else if locks.hueValue}
-					<input
-						type="range"
-						min="0"
-						max="360"
-						value={effectiveFavicon.hueValue}
-						class="ctrl-slider col-fav-slider fav-dimmed"
-						disabled
-					/>
-					<input
-						type="number"
-						min="0"
-						max="360"
-						value={effectiveFavicon.hueValue}
-						class="ctrl-number col-fav-num fav-dimmed"
-						disabled
-					/>
-					<span class="col-fav-label row-label fav-side-label fav-dimmed"
-						>{effectiveFavicon.hueValue}</span
-					>
-				{:else}
-					<span class="col-fav-slider"></span>
-					<span class="col-fav-num"></span>
-					<span class="col-fav-label"></span>
-				{/if}
-			</div>
-		{/if}
-
-		<!-- ════════════════ SATURATION (conditional) ════════════════ -->
-		{#if logo.iconColorModeKey === 'hue' || (!locks.iconColorModeKey && favicon.iconColorModeKey === 'hue')}
-			<div class="ctrl-row">
-				<span class="col-logo-label row-label">Saturation</span>
-				{#if logo.iconColorModeKey === 'hue'}
-					<input
-						type="number"
-						min="0"
-						max="100"
-						bind:value={logo.saturationValue}
-						class="ctrl-number col-logo-num"
-					/>
-					<input
-						type="range"
-						min="0"
-						max="100"
-						bind:value={logo.saturationValue}
-						class="ctrl-slider col-logo-slider"
-					/>
-				{:else}
-					<span class="col-logo-num"></span>
-					<span class="col-logo-slider"></span>
-				{/if}
 				<button
 					class="reset-btn col-reset"
-					onclick={() => resetLogoField('saturationValue')}
-					title="Reset">↺</button
+					onclick={() => resetLogoField('icon')}
+					disabled={isAtDefault('icon')}
+					title="Reset to default">↺</button
 				>
 				<div class="lock-col col-lock">
 					<button
 						class="lock-btn"
-						class:locked={locks.saturationValue}
-						onclick={() => toggleLock('saturationValue')}
-						title={locks.saturationValue ? 'Locked to logo' : 'Unlock favicon'}
+						class:locked={locks.icon}
+						onclick={() => toggleLock('icon')}
+						title={locks.icon ? 'Locked to logo' : 'Unlock favicon'}
 					>
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-						{@html locks.saturationValue ? ICON_LOCK : ICON_UNLOCK}
+						{@html locks.icon ? ICON_LOCK : ICON_UNLOCK}
 					</button>
 				</div>
-				{#if !locks.saturationValue && favicon.iconColorModeKey === 'hue'}
-					<input
-						type="range"
-						min="0"
-						max="100"
-						bind:value={favicon.saturationValue}
-						class="ctrl-slider col-fav-slider"
-					/>
-					<input
-						type="number"
-						min="0"
-						max="100"
-						bind:value={favicon.saturationValue}
-						class="ctrl-number col-fav-num"
-					/>
-					<span class="col-fav-label row-label fav-side-label">Saturation</span>
-				{:else if locks.saturationValue}
-					<input
-						type="range"
-						min="0"
-						max="100"
-						value={effectiveFavicon.saturationValue}
-						class="ctrl-slider col-fav-slider fav-dimmed"
-						disabled
-					/>
-					<input
-						type="number"
-						min="0"
-						max="100"
-						value={effectiveFavicon.saturationValue}
-						class="ctrl-number col-fav-num fav-dimmed"
-						disabled
-					/>
-					<span class="col-fav-label row-label fav-side-label fav-dimmed"
-						>{effectiveFavicon.saturationValue}</span
-					>
-				{:else}
-					<span class="col-fav-slider"></span>
-					<span class="col-fav-num"></span>
-					<span class="col-fav-label"></span>
-				{/if}
-			</div>
-		{/if}
-
-		<!-- ════════════════ ICON SIZE ════════════════ -->
-		<div class="ctrl-row">
-			<span class="col-logo-label row-label">Icon Size</span>
-			<input
-				type="number"
-				min="10"
-				max="100"
-				bind:value={logo.iconSize}
-				class="ctrl-number col-logo-num"
-			/>
-			<input
-				type="range"
-				min="10"
-				max="100"
-				bind:value={logo.iconSize}
-				class="ctrl-slider col-logo-slider"
-			/>
-			<button class="reset-btn col-reset" onclick={() => resetLogoField('iconSize')} title="Reset"
-				>↺</button
-			>
-			<div class="lock-col col-lock">
-				<button
-					class="lock-btn"
-					class:locked={locks.iconSize}
-					onclick={() => toggleLock('iconSize')}
-					title={locks.iconSize ? 'Locked to logo' : 'Unlock favicon'}
-				>
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html locks.iconSize ? ICON_LOCK : ICON_UNLOCK}
-				</button>
-			</div>
-			<input
-				type="range"
-				min="10"
-				max="100"
-				bind:value={favicon.iconSize}
-				class="ctrl-slider col-fav-slider"
-				class:fav-dimmed={locks.iconSize}
-				disabled={locks.iconSize}
-			/>
-			<input
-				type="number"
-				min="10"
-				max="100"
-				bind:value={favicon.iconSize}
-				class="ctrl-number col-fav-num"
-				class:fav-dimmed={locks.iconSize}
-				disabled={locks.iconSize}
-			/>
-			<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.iconSize}>
-				Icon Size
-			</span>
-		</div>
-
-		<!-- ════════════════ OFFSET X ════════════════ -->
-		<div class="ctrl-row">
-			<span class="col-logo-label row-label">Offset X</span>
-			<input
-				type="number"
-				min="-50"
-				max="50"
-				bind:value={logo.iconOffsetX}
-				class="ctrl-number col-logo-num"
-			/>
-			<input
-				type="range"
-				min="-50"
-				max="50"
-				bind:value={logo.iconOffsetX}
-				class="ctrl-slider col-logo-slider"
-			/>
-			<button
-				class="reset-btn col-reset"
-				onclick={() => resetLogoField('iconOffsetX')}
-				title="Reset">↺</button
-			>
-			<div class="lock-col col-lock">
-				<button
-					class="lock-btn"
-					class:locked={locks.iconOffsetX}
-					onclick={() => toggleLock('iconOffsetX')}
-					title={locks.iconOffsetX ? 'Locked to logo' : 'Unlock favicon'}
-				>
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html locks.iconOffsetX ? ICON_LOCK : ICON_UNLOCK}
-				</button>
-			</div>
-			<input
-				type="range"
-				min="-50"
-				max="50"
-				bind:value={favicon.iconOffsetX}
-				class="ctrl-slider col-fav-slider"
-				class:fav-dimmed={locks.iconOffsetX}
-				disabled={locks.iconOffsetX}
-			/>
-			<input
-				type="number"
-				min="-50"
-				max="50"
-				bind:value={favicon.iconOffsetX}
-				class="ctrl-number col-fav-num"
-				class:fav-dimmed={locks.iconOffsetX}
-				disabled={locks.iconOffsetX}
-			/>
-			<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.iconOffsetX}>
-				Offset X
-			</span>
-		</div>
-
-		<!-- ════════════════ OFFSET Y ════════════════ -->
-		<div class="ctrl-row">
-			<span class="col-logo-label row-label">Offset Y</span>
-			<input
-				type="number"
-				min="-50"
-				max="50"
-				bind:value={logo.iconOffsetY}
-				class="ctrl-number col-logo-num"
-			/>
-			<input
-				type="range"
-				min="-50"
-				max="50"
-				bind:value={logo.iconOffsetY}
-				class="ctrl-slider col-logo-slider"
-			/>
-			<button
-				class="reset-btn col-reset"
-				onclick={() => resetLogoField('iconOffsetY')}
-				title="Reset">↺</button
-			>
-			<div class="lock-col col-lock">
-				<button
-					class="lock-btn"
-					class:locked={locks.iconOffsetY}
-					onclick={() => toggleLock('iconOffsetY')}
-					title={locks.iconOffsetY ? 'Locked to logo' : 'Unlock favicon'}
-				>
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html locks.iconOffsetY ? ICON_LOCK : ICON_UNLOCK}
-				</button>
-			</div>
-			<input
-				type="range"
-				min="-50"
-				max="50"
-				bind:value={favicon.iconOffsetY}
-				class="ctrl-slider col-fav-slider"
-				class:fav-dimmed={locks.iconOffsetY}
-				disabled={locks.iconOffsetY}
-			/>
-			<input
-				type="number"
-				min="-50"
-				max="50"
-				bind:value={favicon.iconOffsetY}
-				class="ctrl-number col-fav-num"
-				class:fav-dimmed={locks.iconOffsetY}
-				disabled={locks.iconOffsetY}
-			/>
-			<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.iconOffsetY}>
-				Offset Y
-			</span>
-		</div>
-
-		<!-- ════════════════ ROTATION ════════════════ -->
-		<div class="ctrl-row">
-			<span class="col-logo-label row-label">Rotation</span>
-			<input
-				type="number"
-				min="-180"
-				max="180"
-				bind:value={logo.iconRotation}
-				class="ctrl-number col-logo-num"
-			/>
-			<input
-				type="range"
-				min="-180"
-				max="180"
-				bind:value={logo.iconRotation}
-				class="ctrl-slider col-logo-slider"
-			/>
-			<button
-				class="reset-btn col-reset"
-				onclick={() => resetLogoField('iconRotation')}
-				title="Reset">↺</button
-			>
-			<div class="lock-col col-lock">
-				<button
-					class="lock-btn"
-					class:locked={locks.iconRotation}
-					onclick={() => toggleLock('iconRotation')}
-					title={locks.iconRotation ? 'Locked to logo' : 'Unlock favicon'}
-				>
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html locks.iconRotation ? ICON_LOCK : ICON_UNLOCK}
-				</button>
-			</div>
-			<input
-				type="range"
-				min="-180"
-				max="180"
-				bind:value={favicon.iconRotation}
-				class="ctrl-slider col-fav-slider"
-				class:fav-dimmed={locks.iconRotation}
-				disabled={locks.iconRotation}
-			/>
-			<input
-				type="number"
-				min="-180"
-				max="180"
-				bind:value={favicon.iconRotation}
-				class="ctrl-number col-fav-num"
-				class:fav-dimmed={locks.iconRotation}
-				disabled={locks.iconRotation}
-			/>
-			<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.iconRotation}>
-				Rotation
-			</span>
-		</div>
-
-		<!-- ════════════════ CORNER RADIUS ════════════════ -->
-		<div class="ctrl-row">
-			<span class="col-logo-label row-label">Corner Radius</span>
-			<input
-				type="number"
-				min="0"
-				max="50"
-				bind:value={logo.cornerRadius}
-				class="ctrl-number col-logo-num"
-			/>
-			<input
-				type="range"
-				min="0"
-				max="50"
-				bind:value={logo.cornerRadius}
-				class="ctrl-slider col-logo-slider"
-			/>
-			<button
-				class="reset-btn col-reset"
-				onclick={() => resetLogoField('cornerRadius')}
-				title="Reset">↺</button
-			>
-			<div class="lock-col col-lock">
-				<button
-					class="lock-btn"
-					class:locked={locks.cornerRadius}
-					onclick={() => toggleLock('cornerRadius')}
-					title={locks.cornerRadius ? 'Locked to logo' : 'Unlock favicon'}
-				>
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html locks.cornerRadius ? ICON_LOCK : ICON_UNLOCK}
-				</button>
-			</div>
-			<input
-				type="range"
-				min="0"
-				max="50"
-				bind:value={favicon.cornerRadius}
-				class="ctrl-slider col-fav-slider"
-				class:fav-dimmed={locks.cornerRadius}
-				disabled={locks.cornerRadius}
-			/>
-			<input
-				type="number"
-				min="0"
-				max="50"
-				bind:value={favicon.cornerRadius}
-				class="ctrl-number col-fav-num"
-				class:fav-dimmed={locks.cornerRadius}
-				disabled={locks.cornerRadius}
-			/>
-			<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.cornerRadius}>
-				Corner Radius
-			</span>
-		</div>
-
-		<!-- ════════════════ CORNER K + PRESETS (combined row) ════════════════ -->
-		<div class="ctrl-row corner-k-row">
-			<span class="col-logo-label row-label">
-				Corner K
-				<span class="k-label">{cornerKLabel(logo.cornerK)}</span>
-			</span>
-			<div class="k-num-slider-logo">
-				<div class="k-top-row">
-					<input
-						type="number"
-						min="-10"
-						max="10"
-						step="0.1"
-						bind:value={logo.cornerK}
-						class="ctrl-number"
-					/>
-					<input
-						type="range"
-						min="-10"
-						max="10"
-						step="0.1"
-						bind:value={logo.cornerK}
-						class="ctrl-slider"
-					/>
-				</div>
-				<div class="k-presets">
-					<button onclick={() => (logo.cornerK = 10)}>square</button>
-					<button onclick={() => (logo.cornerK = 2)}>squircle</button>
-					<button onclick={() => (logo.cornerK = 1)}>round</button>
-					<button onclick={() => (logo.cornerK = 0)}>bevel</button>
-					<button onclick={() => (logo.cornerK = -1)}>scoop</button>
-					<button onclick={() => (logo.cornerK = -10)}>notch</button>
-				</div>
-			</div>
-			<button class="reset-btn col-reset" onclick={() => resetLogoField('cornerK')} title="Reset"
-				>↺</button
-			>
-			<div class="lock-col col-lock">
-				<button
-					class="lock-btn"
-					class:locked={locks.cornerK}
-					onclick={() => toggleLock('cornerK')}
-					title={locks.cornerK ? 'Locked to logo' : 'Unlock favicon'}
-				>
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html locks.cornerK ? ICON_LOCK : ICON_UNLOCK}
-				</button>
-			</div>
-			<div class="k-num-slider-fav" class:fav-dimmed={locks.cornerK}>
-				<div class="k-top-row">
-					<input
-						type="range"
-						min="-10"
-						max="10"
-						step="0.1"
-						bind:value={favicon.cornerK}
-						class="ctrl-slider"
-						disabled={locks.cornerK}
-					/>
-					<input
-						type="number"
-						min="-10"
-						max="10"
-						step="0.1"
-						bind:value={favicon.cornerK}
-						class="ctrl-number"
-						disabled={locks.cornerK}
-					/>
-				</div>
-				{#if !locks.cornerK}
-					<div class="k-presets">
-						<button onclick={() => (favicon.cornerK = 10)}>square</button>
-						<button onclick={() => (favicon.cornerK = 2)}>squircle</button>
-						<button onclick={() => (favicon.cornerK = 1)}>round</button>
-						<button onclick={() => (favicon.cornerK = 0)}>bevel</button>
-						<button onclick={() => (favicon.cornerK = -1)}>scoop</button>
-						<button onclick={() => (favicon.cornerK = -10)}>notch</button>
+				<div class="fav-icon-wrap" class:fav-dimmed={locks.icon}>
+					<div class="icon-input-group">
+						<textarea
+							class="icon-input"
+							bind:value={favicon.icon}
+							rows={3}
+							placeholder="Iconify ID or paste SVG..."
+							disabled={locks.icon}
+						></textarea>
+						{#if !locks.icon}
+							<a
+								href="https://icon-sets.iconify.design"
+								target="_blank"
+								rel="noopener"
+								class="browse-link">Browse icons →</a
+							>
+						{/if}
 					</div>
-				{/if}
+					<span class="fav-icon-label">Icon</span>
+				</div>
 			</div>
-			<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.cornerK}>
-				Corner K
-				<span class="k-label">{cornerKLabel(effectiveFavicon.cornerK)}</span>
-			</span>
-		</div>
 
-		<!-- ════════════════ BACKGROUND TOGGLE ════════════════ -->
-		<div class="ctrl-row">
-			<span class="col-logo-label row-label">Background</span>
-			<span class="col-logo-num"></span>
-			<div class="col-logo-slider">
-				<label class="toggle-label">
-					<input type="checkbox" bind:checked={logo.useGradient} />
-					Gradient
-				</label>
-			</div>
-			<span class="col-reset"></span>
-			<div class="lock-col col-lock">
+			<!-- ════════════════ EMOJI STYLE PICKER ════════════════ -->
+			{#if isEmojiIcon}
+				<div class="ctrl-row emoji-style-row">
+					<span class="col-logo-label row-label">Emoji style</span>
+					<div class="emoji-picker-area">
+						{#each EMOJI_SETS as set}
+							<button
+								class="emoji-cell"
+								class:selected={emojiStyle === set.prefix}
+								class:mono={set.monochrome}
+								onclick={() => (emojiStyle = set.prefix)}
+								title={set.name}
+							>
+								<span class="emoji-cell-icon">
+									<AppLogo
+										icon={logo.icon}
+										emojiStyle={set.prefix}
+										background="transparent"
+										size={40}
+									/>
+								</span>
+								<span class="emoji-cell-label">{set.name}</span>
+							</button>
+						{/each}
+						<button
+							class="emoji-cell"
+							class:selected={emojiStyle === 'native'}
+							onclick={() => (emojiStyle = 'native')}
+							title="Platform native"
+						>
+							<span
+								class="emoji-cell-icon native-emoji"
+								style="font-size: 28px; line-height: 40px;"
+							>
+								{logo.icon}
+							</span>
+							<span class="emoji-cell-label">Native</span>
+						</button>
+					</div>
+				</div>
+			{/if}
+
+			<!-- ════════════════ ICON COLOR ════════════════ -->
+			<div class="ctrl-row">
+				<span class="col-logo-label row-label">Icon Color</span>
+				<span class="col-logo-num"></span>
+				<div class="col-logo-slider color-area">
+					<input type="color" bind:value={logo.iconColor} class="color-swatch" />
+					<span class="color-hex">{logo.iconColor}</span>
+				</div>
 				<button
-					class="lock-btn"
-					class:locked={locks.useGradient}
-					onclick={() => toggleLock('useGradient')}
-					title={locks.useGradient ? 'Locked to logo' : 'Unlock favicon'}
+					class="reset-btn col-reset"
+					onclick={() => resetLogoField('iconColor')}
+					title="Reset"
+					disabled={isAtDefault('iconColor')}>↺</button
 				>
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html locks.useGradient ? ICON_LOCK : ICON_UNLOCK}
-				</button>
+				<div class="lock-col col-lock">
+					<button
+						class="lock-btn"
+						class:locked={locks.iconColor}
+						onclick={() => toggleLock('iconColor')}
+						title={locks.iconColor ? 'Locked to logo' : 'Unlock favicon'}
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html locks.iconColor ? ICON_LOCK : ICON_UNLOCK}
+					</button>
+				</div>
+				<div class="col-fav-slider color-area" class:fav-dimmed={locks.iconColor}>
+					<input
+						type="color"
+						bind:value={favicon.iconColor}
+						class="color-swatch"
+						disabled={locks.iconColor}
+					/>
+					<span class="color-hex">{favicon.iconColor}</span>
+				</div>
+				<span class="col-fav-num"></span>
+				<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.iconColor}>
+					Icon Color
+				</span>
 			</div>
-			<div class="col-fav-slider" class:fav-dimmed={locks.useGradient}>
-				<label class="toggle-label">
-					<input type="checkbox" bind:checked={favicon.useGradient} disabled={locks.useGradient} />
-					Gradient
-				</label>
-			</div>
-			<span class="col-fav-num"></span>
-			<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.useGradient}>
-				Background
-			</span>
-		</div>
 
-		<!-- ════════════════ SOLID COLOR ════════════════ -->
-		<div class="ctrl-row">
-			<span class="col-logo-label row-label" class:fav-dimmed={logo.useGradient}>Solid Color</span>
-			<span class="col-logo-num"></span>
-			<div class="col-logo-slider color-area" class:fav-dimmed={logo.useGradient}>
+			<!-- ════════════════ COLOR MODE ════════════════ -->
+			<div class="ctrl-row">
+				<span class="col-logo-label row-label">Color Mode</span>
+				<span class="col-logo-num"></span>
+				<div class="col-logo-slider">
+					<select bind:value={logo.iconColorModeKey} class="mode-select">
+						<option value="auto">auto</option>
+						<option value="original">original</option>
+						<option value="monochrome">monochrome</option>
+						<option value="grayscale">grayscale</option>
+						<option value="grayscale-tint">grayscale-tint</option>
+						<option value="hue">hue remap</option>
+					</select>
+				</div>
+				<span class="col-reset"></span>
+				<div class="lock-col col-lock">
+					<button
+						class="lock-btn"
+						class:locked={locks.iconColorModeKey}
+						onclick={() => toggleLock('iconColorModeKey')}
+						title={locks.iconColorModeKey ? 'Locked to logo' : 'Unlock favicon'}
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html locks.iconColorModeKey ? ICON_LOCK : ICON_UNLOCK}
+					</button>
+				</div>
+				<div class="col-fav-slider" class:fav-dimmed={locks.iconColorModeKey}>
+					<select
+						bind:value={favicon.iconColorModeKey}
+						class="mode-select"
+						disabled={locks.iconColorModeKey}
+					>
+						<option value="auto">auto</option>
+						<option value="original">original</option>
+						<option value="monochrome">monochrome</option>
+						<option value="grayscale">grayscale</option>
+						<option value="grayscale-tint">grayscale-tint</option>
+						<option value="hue">hue remap</option>
+					</select>
+				</div>
+				<span class="col-fav-num"></span>
+				<span
+					class="col-fav-label row-label fav-side-label"
+					class:fav-dimmed={locks.iconColorModeKey}
+				>
+					Color Mode
+				</span>
+			</div>
+
+			<!-- ════════════════ HUE (conditional) ════════════════ -->
+			{#if logo.iconColorModeKey === 'hue' || (!locks.iconColorModeKey && favicon.iconColorModeKey === 'hue')}
+				<div class="ctrl-row">
+					<span class="col-logo-label row-label">Hue</span>
+					{#if logo.iconColorModeKey === 'hue'}
+						<input
+							type="number"
+							min="0"
+							max="360"
+							bind:value={logo.hueValue}
+							class="ctrl-number col-logo-num"
+						/>
+						<input
+							type="range"
+							min="0"
+							max="360"
+							bind:value={logo.hueValue}
+							class="ctrl-slider col-logo-slider"
+						/>
+					{:else}
+						<span class="col-logo-num"></span>
+						<span class="col-logo-slider"></span>
+					{/if}
+					<button
+						class="reset-btn col-reset"
+						onclick={() => resetLogoField('hueValue')}
+						title="Reset"
+						disabled={isAtDefault('hueValue')}>↺</button
+					>
+					<div class="lock-col col-lock">
+						<button
+							class="lock-btn"
+							class:locked={locks.hueValue}
+							onclick={() => toggleLock('hueValue')}
+							title={locks.hueValue ? 'Locked to logo' : 'Unlock favicon'}
+						>
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+							{@html locks.hueValue ? ICON_LOCK : ICON_UNLOCK}
+						</button>
+					</div>
+					{#if !locks.hueValue && favicon.iconColorModeKey === 'hue'}
+						<input
+							type="range"
+							min="0"
+							max="360"
+							bind:value={favicon.hueValue}
+							class="ctrl-slider col-fav-slider"
+						/>
+						<input
+							type="number"
+							min="0"
+							max="360"
+							bind:value={favicon.hueValue}
+							class="ctrl-number col-fav-num"
+						/>
+						<span class="col-fav-label row-label fav-side-label">Hue</span>
+					{:else if locks.hueValue}
+						<input
+							type="range"
+							min="0"
+							max="360"
+							value={effectiveFavicon.hueValue}
+							class="ctrl-slider col-fav-slider fav-dimmed"
+							disabled
+						/>
+						<input
+							type="number"
+							min="0"
+							max="360"
+							value={effectiveFavicon.hueValue}
+							class="ctrl-number col-fav-num fav-dimmed"
+							disabled
+						/>
+						<span class="col-fav-label row-label fav-side-label fav-dimmed"
+							>{effectiveFavicon.hueValue}</span
+						>
+					{:else}
+						<span class="col-fav-slider"></span>
+						<span class="col-fav-num"></span>
+						<span class="col-fav-label"></span>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- ════════════════ SATURATION (conditional) ════════════════ -->
+			{#if logo.iconColorModeKey === 'hue' || (!locks.iconColorModeKey && favicon.iconColorModeKey === 'hue')}
+				<div class="ctrl-row">
+					<span class="col-logo-label row-label">Saturation</span>
+					{#if logo.iconColorModeKey === 'hue'}
+						<input
+							type="number"
+							min="0"
+							max="100"
+							bind:value={logo.saturationValue}
+							class="ctrl-number col-logo-num"
+						/>
+						<input
+							type="range"
+							min="0"
+							max="100"
+							bind:value={logo.saturationValue}
+							class="ctrl-slider col-logo-slider"
+						/>
+					{:else}
+						<span class="col-logo-num"></span>
+						<span class="col-logo-slider"></span>
+					{/if}
+					<button
+						class="reset-btn col-reset"
+						onclick={() => resetLogoField('saturationValue')}
+						title="Reset"
+						disabled={isAtDefault('saturationValue')}>↺</button
+					>
+					<div class="lock-col col-lock">
+						<button
+							class="lock-btn"
+							class:locked={locks.saturationValue}
+							onclick={() => toggleLock('saturationValue')}
+							title={locks.saturationValue ? 'Locked to logo' : 'Unlock favicon'}
+						>
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+							{@html locks.saturationValue ? ICON_LOCK : ICON_UNLOCK}
+						</button>
+					</div>
+					{#if !locks.saturationValue && favicon.iconColorModeKey === 'hue'}
+						<input
+							type="range"
+							min="0"
+							max="100"
+							bind:value={favicon.saturationValue}
+							class="ctrl-slider col-fav-slider"
+						/>
+						<input
+							type="number"
+							min="0"
+							max="100"
+							bind:value={favicon.saturationValue}
+							class="ctrl-number col-fav-num"
+						/>
+						<span class="col-fav-label row-label fav-side-label">Saturation</span>
+					{:else if locks.saturationValue}
+						<input
+							type="range"
+							min="0"
+							max="100"
+							value={effectiveFavicon.saturationValue}
+							class="ctrl-slider col-fav-slider fav-dimmed"
+							disabled
+						/>
+						<input
+							type="number"
+							min="0"
+							max="100"
+							value={effectiveFavicon.saturationValue}
+							class="ctrl-number col-fav-num fav-dimmed"
+							disabled
+						/>
+						<span class="col-fav-label row-label fav-side-label fav-dimmed"
+							>{effectiveFavicon.saturationValue}</span
+						>
+					{:else}
+						<span class="col-fav-slider"></span>
+						<span class="col-fav-num"></span>
+						<span class="col-fav-label"></span>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- ════════════════ GRAYSCALE LIGHTNESS (conditional) ════════════════ -->
+			{#if logoIsGrayscaleMode || (!locks.iconColorModeKey && favIsGrayscaleMode)}
+				<div class="ctrl-row">
+					<span class="col-logo-label row-label">Lightness</span>
+					{#if logoIsGrayscaleMode}
+						<input
+							type="number"
+							min="0"
+							max="200"
+							bind:value={logo.grayscaleLightness}
+							class="ctrl-number col-logo-num"
+						/>
+						<input
+							type="range"
+							min="0"
+							max="200"
+							bind:value={logo.grayscaleLightness}
+							class="ctrl-slider col-logo-slider"
+						/>
+					{:else}
+						<span class="col-logo-num"></span>
+						<span class="col-logo-slider"></span>
+					{/if}
+					<button
+						class="reset-btn col-reset"
+						onclick={() => resetLogoField('grayscaleLightness')}
+						title="Reset"
+						disabled={isAtDefault('grayscaleLightness')}>↺</button
+					>
+					<div class="lock-col col-lock">
+						<button
+							class="lock-btn"
+							class:locked={locks.grayscaleLightness}
+							onclick={() => toggleLock('grayscaleLightness')}
+							title={locks.grayscaleLightness ? 'Locked to logo' : 'Unlock favicon'}
+						>
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+							{@html locks.grayscaleLightness ? ICON_LOCK : ICON_UNLOCK}
+						</button>
+					</div>
+					{#if !locks.grayscaleLightness && favIsGrayscaleMode}
+						<input
+							type="range"
+							min="0"
+							max="200"
+							bind:value={favicon.grayscaleLightness}
+							class="ctrl-slider col-fav-slider"
+						/>
+						<input
+							type="number"
+							min="0"
+							max="200"
+							bind:value={favicon.grayscaleLightness}
+							class="ctrl-number col-fav-num"
+						/>
+						<span class="col-fav-label row-label fav-side-label">Lightness</span>
+					{:else if locks.grayscaleLightness}
+						<input
+							type="range"
+							min="0"
+							max="200"
+							value={effectiveFavicon.grayscaleLightness}
+							class="ctrl-slider col-fav-slider fav-dimmed"
+							disabled
+						/>
+						<input
+							type="number"
+							min="0"
+							max="200"
+							value={effectiveFavicon.grayscaleLightness}
+							class="ctrl-number col-fav-num fav-dimmed"
+							disabled
+						/>
+						<span class="col-fav-label row-label fav-side-label fav-dimmed">Lightness</span>
+					{:else}
+						<span class="col-fav-slider"></span>
+						<span class="col-fav-num"></span>
+						<span class="col-fav-label"></span>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- ════════════════ ICON SIZE ════════════════ -->
+			<div class="ctrl-row">
+				<span class="col-logo-label row-label">Icon Size</span>
 				<input
-					type="color"
-					bind:value={logo.solidColor}
-					class="color-swatch"
-					disabled={logo.useGradient}
+					type="number"
+					min="10"
+					max="100"
+					bind:value={logo.iconSize}
+					class="ctrl-number col-logo-num"
 				/>
-				<span class="color-hex">{logo.solidColor}</span>
-			</div>
-			<button
-				class="reset-btn col-reset"
-				onclick={() => resetLogoField('solidColor')}
-				title="Reset"
-				class:fav-dimmed={logo.useGradient}>↺</button
-			>
-			<div class="lock-col col-lock">
-				<button
-					class="lock-btn"
-					class:locked={locks.solidColor}
-					onclick={() => toggleLock('solidColor')}
-					title={locks.solidColor ? 'Locked to logo' : 'Unlock favicon'}
-				>
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html locks.solidColor ? ICON_LOCK : ICON_UNLOCK}
-				</button>
-			</div>
-			<div
-				class="col-fav-slider color-area"
-				class:fav-dimmed={locks.solidColor || effectiveFavicon.useGradient}
-			>
 				<input
-					type="color"
-					bind:value={favicon.solidColor}
-					class="color-swatch"
-					disabled={locks.solidColor || effectiveFavicon.useGradient}
+					type="range"
+					min="10"
+					max="100"
+					bind:value={logo.iconSize}
+					class="ctrl-slider col-logo-slider"
 				/>
-				<span class="color-hex">{favicon.solidColor}</span>
-			</div>
-			<span class="col-fav-num"></span>
-			<span
-				class="col-fav-label row-label fav-side-label"
-				class:fav-dimmed={locks.solidColor || effectiveFavicon.useGradient}
-			>
-				Solid Color
-			</span>
-		</div>
-
-		<!-- ════════════════ GRADIENT ANGLE ════════════════ -->
-		<div class="ctrl-row">
-			<span class="col-logo-label row-label" class:fav-dimmed={!logo.useGradient}>Grad Angle</span>
-			<input
-				type="number"
-				min="0"
-				max="360"
-				bind:value={logo.gradientAngle}
-				class="ctrl-number col-logo-num"
-				class:fav-dimmed={!logo.useGradient}
-				disabled={!logo.useGradient}
-			/>
-			<input
-				type="range"
-				min="0"
-				max="360"
-				bind:value={logo.gradientAngle}
-				class="ctrl-slider col-logo-slider"
-				class:fav-dimmed={!logo.useGradient}
-				disabled={!logo.useGradient}
-			/>
-			<button
-				class="reset-btn col-reset"
-				onclick={() => resetLogoField('gradientAngle')}
-				title="Reset"
-				class:fav-dimmed={!logo.useGradient}>↺</button
-			>
-			<div class="lock-col col-lock">
 				<button
-					class="lock-btn"
-					class:locked={locks.gradientAngle}
-					onclick={() => toggleLock('gradientAngle')}
-					title={locks.gradientAngle ? 'Locked to logo' : 'Unlock favicon'}
+					class="reset-btn col-reset"
+					onclick={() => resetLogoField('iconSize')}
+					title="Reset"
+					disabled={isAtDefault('iconSize')}>↺</button
+				>
+				<div class="lock-col col-lock">
+					<button
+						class="lock-btn"
+						class:locked={locks.iconSize}
+						onclick={() => toggleLock('iconSize')}
+						title={locks.iconSize ? 'Locked to logo' : 'Unlock favicon'}
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html locks.iconSize ? ICON_LOCK : ICON_UNLOCK}
+					</button>
+				</div>
+				<input
+					type="range"
+					min="10"
+					max="100"
+					bind:value={favicon.iconSize}
+					class="ctrl-slider col-fav-slider"
+					class:fav-dimmed={locks.iconSize}
+					disabled={locks.iconSize}
+				/>
+				<input
+					type="number"
+					min="10"
+					max="100"
+					bind:value={favicon.iconSize}
+					class="ctrl-number col-fav-num"
+					class:fav-dimmed={locks.iconSize}
+					disabled={locks.iconSize}
+				/>
+				<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.iconSize}>
+					Icon Size
+				</span>
+			</div>
+
+			<!-- ════════════════ OFFSET X ════════════════ -->
+			<div class="ctrl-row">
+				<span class="col-logo-label row-label">Offset X</span>
+				<input
+					type="number"
+					min="-50"
+					max="50"
+					bind:value={logo.iconOffsetX}
+					class="ctrl-number col-logo-num"
+				/>
+				<input
+					type="range"
+					min="-50"
+					max="50"
+					bind:value={logo.iconOffsetX}
+					class="ctrl-slider col-logo-slider"
+				/>
+				<button
+					class="reset-btn col-reset"
+					onclick={() => resetLogoField('iconOffsetX')}
+					title="Reset"
+					disabled={isAtDefault('iconOffsetX')}>↺</button
+				>
+				<div class="lock-col col-lock">
+					<button
+						class="lock-btn"
+						class:locked={locks.iconOffsetX}
+						onclick={() => toggleLock('iconOffsetX')}
+						title={locks.iconOffsetX ? 'Locked to logo' : 'Unlock favicon'}
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html locks.iconOffsetX ? ICON_LOCK : ICON_UNLOCK}
+					</button>
+				</div>
+				<input
+					type="range"
+					min="-50"
+					max="50"
+					bind:value={favicon.iconOffsetX}
+					class="ctrl-slider col-fav-slider"
+					class:fav-dimmed={locks.iconOffsetX}
+					disabled={locks.iconOffsetX}
+				/>
+				<input
+					type="number"
+					min="-50"
+					max="50"
+					bind:value={favicon.iconOffsetX}
+					class="ctrl-number col-fav-num"
+					class:fav-dimmed={locks.iconOffsetX}
+					disabled={locks.iconOffsetX}
+				/>
+				<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.iconOffsetX}>
+					Offset X
+				</span>
+			</div>
+
+			<!-- ════════════════ OFFSET Y ════════════════ -->
+			<div class="ctrl-row">
+				<span class="col-logo-label row-label">Offset Y</span>
+				<input
+					type="number"
+					min="-50"
+					max="50"
+					bind:value={logo.iconOffsetY}
+					class="ctrl-number col-logo-num"
+				/>
+				<input
+					type="range"
+					min="-50"
+					max="50"
+					bind:value={logo.iconOffsetY}
+					class="ctrl-slider col-logo-slider"
+				/>
+				<button
+					class="reset-btn col-reset"
+					onclick={() => resetLogoField('iconOffsetY')}
+					title="Reset"
+					disabled={isAtDefault('iconOffsetY')}>↺</button
+				>
+				<div class="lock-col col-lock">
+					<button
+						class="lock-btn"
+						class:locked={locks.iconOffsetY}
+						onclick={() => toggleLock('iconOffsetY')}
+						title={locks.iconOffsetY ? 'Locked to logo' : 'Unlock favicon'}
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html locks.iconOffsetY ? ICON_LOCK : ICON_UNLOCK}
+					</button>
+				</div>
+				<input
+					type="range"
+					min="-50"
+					max="50"
+					bind:value={favicon.iconOffsetY}
+					class="ctrl-slider col-fav-slider"
+					class:fav-dimmed={locks.iconOffsetY}
+					disabled={locks.iconOffsetY}
+				/>
+				<input
+					type="number"
+					min="-50"
+					max="50"
+					bind:value={favicon.iconOffsetY}
+					class="ctrl-number col-fav-num"
+					class:fav-dimmed={locks.iconOffsetY}
+					disabled={locks.iconOffsetY}
+				/>
+				<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.iconOffsetY}>
+					Offset Y
+				</span>
+			</div>
+
+			<!-- ════════════════ ROTATION ════════════════ -->
+			<div class="ctrl-row">
+				<span class="col-logo-label row-label">Rotation</span>
+				<input
+					type="number"
+					min="-180"
+					max="180"
+					bind:value={logo.iconRotation}
+					class="ctrl-number col-logo-num"
+				/>
+				<input
+					type="range"
+					min="-180"
+					max="180"
+					bind:value={logo.iconRotation}
+					class="ctrl-slider col-logo-slider"
+				/>
+				<button
+					class="reset-btn col-reset"
+					onclick={() => resetLogoField('iconRotation')}
+					title="Reset"
+					disabled={isAtDefault('iconRotation')}>↺</button
+				>
+				<div class="lock-col col-lock">
+					<button
+						class="lock-btn"
+						class:locked={locks.iconRotation}
+						onclick={() => toggleLock('iconRotation')}
+						title={locks.iconRotation ? 'Locked to logo' : 'Unlock favicon'}
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html locks.iconRotation ? ICON_LOCK : ICON_UNLOCK}
+					</button>
+				</div>
+				<input
+					type="range"
+					min="-180"
+					max="180"
+					bind:value={favicon.iconRotation}
+					class="ctrl-slider col-fav-slider"
+					class:fav-dimmed={locks.iconRotation}
+					disabled={locks.iconRotation}
+				/>
+				<input
+					type="number"
+					min="-180"
+					max="180"
+					bind:value={favicon.iconRotation}
+					class="ctrl-number col-fav-num"
+					class:fav-dimmed={locks.iconRotation}
+					disabled={locks.iconRotation}
+				/>
+				<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.iconRotation}>
+					Rotation
+				</span>
+			</div>
+		</article>
+
+		<!-- ══ GROUP: CORNERS ═════════════════════════════════════════════ -->
+		<article class="control-group">
+			<header>
+				<span class="group-title">Corners</span>
+				<button
+					class="group-btn reset-btn"
+					onclick={() => resetGroup(CORNER_GROUP_FIELDS)}
+					disabled={cornerGroupAtDefaults}
+					title="Reset all corner fields to defaults">↺</button
+				>
+				<button
+					class="group-btn lock-btn"
+					class:locked={cornerGroupAllLocked}
+					onclick={() => toggleGroupLocks(CORNER_GROUP_FIELDS)}
+					title={cornerGroupAllLocked ? 'Unlock all corner fields' : 'Lock all corner fields'}
 				>
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html locks.gradientAngle ? ICON_LOCK : ICON_UNLOCK}
+					{@html cornerGroupAllLocked ? ICON_LOCK : ICON_UNLOCK}
 				</button>
-			</div>
-			<input
-				type="range"
-				min="0"
-				max="360"
-				bind:value={favicon.gradientAngle}
-				class="ctrl-slider col-fav-slider"
-				class:fav-dimmed={locks.gradientAngle || !effectiveFavicon.useGradient}
-				disabled={locks.gradientAngle || !effectiveFavicon.useGradient}
-			/>
-			<input
-				type="number"
-				min="0"
-				max="360"
-				bind:value={favicon.gradientAngle}
-				class="ctrl-number col-fav-num"
-				class:fav-dimmed={locks.gradientAngle || !effectiveFavicon.useGradient}
-				disabled={locks.gradientAngle || !effectiveFavicon.useGradient}
-			/>
-			<span
-				class="col-fav-label row-label fav-side-label"
-				class:fav-dimmed={locks.gradientAngle || !effectiveFavicon.useGradient}
-			>
-				Grad Angle
-			</span>
-		</div>
+			</header>
 
-		<!-- ════════════════ GRADIENT POSITION ════════════════ -->
-		<div class="ctrl-row">
-			<span class="col-logo-label row-label" class:fav-dimmed={!logo.useGradient}
-				>Grad Position</span
-			>
-			<input
-				type="number"
-				min="-100"
-				max="100"
-				bind:value={logo.gradientPosition}
-				class="ctrl-number col-logo-num"
-				class:fav-dimmed={!logo.useGradient}
-				disabled={!logo.useGradient}
-			/>
-			<input
-				type="range"
-				min="-100"
-				max="100"
-				bind:value={logo.gradientPosition}
-				class="ctrl-slider col-logo-slider"
-				class:fav-dimmed={!logo.useGradient}
-				disabled={!logo.useGradient}
-			/>
-			<button
-				class="reset-btn col-reset"
-				onclick={() => resetLogoField('gradientPosition')}
-				title="Reset"
-				class:fav-dimmed={!logo.useGradient}>↺</button
-			>
-			<div class="lock-col col-lock">
+			<!-- ════════════════ CORNER RADIUS ════════════════ -->
+			<div class="ctrl-row">
+				<span class="col-logo-label row-label">Corner Radius</span>
+				<input
+					type="number"
+					min="0"
+					max="50"
+					bind:value={logo.cornerRadius}
+					class="ctrl-number col-logo-num"
+				/>
+				<input
+					type="range"
+					min="0"
+					max="50"
+					bind:value={logo.cornerRadius}
+					class="ctrl-slider col-logo-slider"
+				/>
 				<button
-					class="lock-btn"
-					class:locked={locks.gradientPosition}
-					onclick={() => toggleLock('gradientPosition')}
-					title={locks.gradientPosition ? 'Locked to logo' : 'Unlock favicon'}
+					class="reset-btn col-reset"
+					onclick={() => resetLogoField('cornerRadius')}
+					title="Reset"
+					disabled={isAtDefault('cornerRadius')}>↺</button
+				>
+				<div class="lock-col col-lock">
+					<button
+						class="lock-btn"
+						class:locked={locks.cornerRadius}
+						onclick={() => toggleLock('cornerRadius')}
+						title={locks.cornerRadius ? 'Locked to logo' : 'Unlock favicon'}
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html locks.cornerRadius ? ICON_LOCK : ICON_UNLOCK}
+					</button>
+				</div>
+				<input
+					type="range"
+					min="0"
+					max="50"
+					bind:value={favicon.cornerRadius}
+					class="ctrl-slider col-fav-slider"
+					class:fav-dimmed={locks.cornerRadius}
+					disabled={locks.cornerRadius}
+				/>
+				<input
+					type="number"
+					min="0"
+					max="50"
+					bind:value={favicon.cornerRadius}
+					class="ctrl-number col-fav-num"
+					class:fav-dimmed={locks.cornerRadius}
+					disabled={locks.cornerRadius}
+				/>
+				<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.cornerRadius}>
+					Corner Radius
+				</span>
+			</div>
+
+			<!-- ════════════════ CORNER K + PRESETS (combined row) ════════════════ -->
+			<div class="ctrl-row corner-k-row">
+				<span class="col-logo-label row-label">
+					Corner K
+					<span class="k-label">{cornerKLabel(logo.cornerK)}</span>
+				</span>
+				<div class="k-num-slider-logo">
+					<div class="k-top-row">
+						<input
+							type="number"
+							min="-10"
+							max="10"
+							step="0.1"
+							bind:value={logo.cornerK}
+							class="ctrl-number"
+						/>
+						<input
+							type="range"
+							min="-10"
+							max="10"
+							step="0.1"
+							bind:value={logo.cornerK}
+							class="ctrl-slider"
+						/>
+					</div>
+					<div class="k-presets">
+						<button onclick={() => (logo.cornerK = 10)}>square</button>
+						<button onclick={() => (logo.cornerK = 2)}>squircle</button>
+						<button onclick={() => (logo.cornerK = 1)}>round</button>
+						<button onclick={() => (logo.cornerK = 0)}>bevel</button>
+						<button onclick={() => (logo.cornerK = -1)}>scoop</button>
+						<button onclick={() => (logo.cornerK = -10)}>notch</button>
+					</div>
+				</div>
+				<button
+					class="reset-btn col-reset"
+					onclick={() => resetLogoField('cornerK')}
+					title="Reset"
+					disabled={isAtDefault('cornerK')}>↺</button
+				>
+				<div class="lock-col col-lock">
+					<button
+						class="lock-btn"
+						class:locked={locks.cornerK}
+						onclick={() => toggleLock('cornerK')}
+						title={locks.cornerK ? 'Locked to logo' : 'Unlock favicon'}
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html locks.cornerK ? ICON_LOCK : ICON_UNLOCK}
+					</button>
+				</div>
+				<div class="k-num-slider-fav" class:fav-dimmed={locks.cornerK}>
+					<div class="k-top-row">
+						<input
+							type="range"
+							min="-10"
+							max="10"
+							step="0.1"
+							bind:value={favicon.cornerK}
+							class="ctrl-slider"
+							disabled={locks.cornerK}
+						/>
+						<input
+							type="number"
+							min="-10"
+							max="10"
+							step="0.1"
+							bind:value={favicon.cornerK}
+							class="ctrl-number"
+							disabled={locks.cornerK}
+						/>
+					</div>
+					{#if !locks.cornerK}
+						<div class="k-presets">
+							<button onclick={() => (favicon.cornerK = 10)}>square</button>
+							<button onclick={() => (favicon.cornerK = 2)}>squircle</button>
+							<button onclick={() => (favicon.cornerK = 1)}>round</button>
+							<button onclick={() => (favicon.cornerK = 0)}>bevel</button>
+							<button onclick={() => (favicon.cornerK = -1)}>scoop</button>
+							<button onclick={() => (favicon.cornerK = -10)}>notch</button>
+						</div>
+					{/if}
+				</div>
+				<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.cornerK}>
+					Corner K
+					<span class="k-label">{cornerKLabel(effectiveFavicon.cornerK)}</span>
+				</span>
+			</div>
+		</article>
+
+		<!-- ══ GROUP: BACKGROUND ══════════════════════════════════════════ -->
+		<article class="control-group">
+			<header>
+				<span class="group-title">Background</span>
+				<button
+					class="group-btn reset-btn"
+					onclick={() => resetGroup(BG_GROUP_FIELDS)}
+					disabled={bgGroupAtDefaults}
+					title="Reset all background fields to defaults">↺</button
+				>
+				<button
+					class="group-btn lock-btn"
+					class:locked={bgGroupAllLocked}
+					onclick={() => toggleGroupLocks(BG_GROUP_FIELDS)}
+					title={bgGroupAllLocked ? 'Unlock all background fields' : 'Lock all background fields'}
 				>
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html locks.gradientPosition ? ICON_LOCK : ICON_UNLOCK}
+					{@html bgGroupAllLocked ? ICON_LOCK : ICON_UNLOCK}
 				</button>
-			</div>
-			<input
-				type="range"
-				min="-100"
-				max="100"
-				bind:value={favicon.gradientPosition}
-				class="ctrl-slider col-fav-slider"
-				class:fav-dimmed={locks.gradientPosition || !effectiveFavicon.useGradient}
-				disabled={locks.gradientPosition || !effectiveFavicon.useGradient}
-			/>
-			<input
-				type="number"
-				min="-100"
-				max="100"
-				bind:value={favicon.gradientPosition}
-				class="ctrl-number col-fav-num"
-				class:fav-dimmed={locks.gradientPosition || !effectiveFavicon.useGradient}
-				disabled={locks.gradientPosition || !effectiveFavicon.useGradient}
-			/>
-			<span
-				class="col-fav-label row-label fav-side-label"
-				class:fav-dimmed={locks.gradientPosition || !effectiveFavicon.useGradient}
-			>
-				Grad Position
-			</span>
-		</div>
+			</header>
 
-		<!-- ════════════════ GRADIENT SCALE ════════════════ -->
-		<div class="ctrl-row">
-			<span class="col-logo-label row-label" class:fav-dimmed={!logo.useGradient}>Grad Scale</span>
-			<input
-				type="number"
-				min="0.1"
-				max="3"
-				step="0.05"
-				bind:value={logo.gradientScale}
-				class="ctrl-number col-logo-num"
-				class:fav-dimmed={!logo.useGradient}
-				disabled={!logo.useGradient}
-			/>
-			<input
-				type="range"
-				min="0.1"
-				max="3"
-				step="0.05"
-				bind:value={logo.gradientScale}
-				class="ctrl-slider col-logo-slider"
-				class:fav-dimmed={!logo.useGradient}
-				disabled={!logo.useGradient}
-			/>
-			<button
-				class="reset-btn col-reset"
-				onclick={() => resetLogoField('gradientScale')}
-				title="Reset"
-				class:fav-dimmed={!logo.useGradient}>↺</button
-			>
-			<div class="lock-col col-lock">
-				<button
-					class="lock-btn"
-					class:locked={locks.gradientScale}
-					onclick={() => toggleLock('gradientScale')}
-					title={locks.gradientScale ? 'Locked to logo' : 'Unlock favicon'}
-				>
-					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html locks.gradientScale ? ICON_LOCK : ICON_UNLOCK}
-				</button>
+			<!-- ════════════════ BACKGROUND TOGGLE ════════════════ -->
+			<div class="ctrl-row">
+				<span class="col-logo-label row-label">Background</span>
+				<span class="col-logo-num"></span>
+				<div class="col-logo-slider">
+					<label class="toggle-label">
+						<input type="checkbox" bind:checked={logo.useGradient} />
+						Gradient
+					</label>
+				</div>
+				<span class="col-reset"></span>
+				<div class="lock-col col-lock">
+					<button
+						class="lock-btn"
+						class:locked={locks.useGradient}
+						onclick={() => toggleLock('useGradient')}
+						title={locks.useGradient ? 'Locked to logo' : 'Unlock favicon'}
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html locks.useGradient ? ICON_LOCK : ICON_UNLOCK}
+					</button>
+				</div>
+				<div class="col-fav-slider" class:fav-dimmed={locks.useGradient}>
+					<label class="toggle-label">
+						<input
+							type="checkbox"
+							bind:checked={favicon.useGradient}
+							disabled={locks.useGradient}
+						/>
+						Gradient
+					</label>
+				</div>
+				<span class="col-fav-num"></span>
+				<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.useGradient}>
+					Background
+				</span>
 			</div>
-			<input
-				type="range"
-				min="0.1"
-				max="3"
-				step="0.05"
-				bind:value={favicon.gradientScale}
-				class="ctrl-slider col-fav-slider"
-				class:fav-dimmed={locks.gradientScale || !effectiveFavicon.useGradient}
-				disabled={locks.gradientScale || !effectiveFavicon.useGradient}
-			/>
-			<input
-				type="number"
-				min="0.1"
-				max="3"
-				step="0.05"
-				bind:value={favicon.gradientScale}
-				class="ctrl-number col-fav-num"
-				class:fav-dimmed={locks.gradientScale || !effectiveFavicon.useGradient}
-				disabled={locks.gradientScale || !effectiveFavicon.useGradient}
-			/>
-			<span
-				class="col-fav-label row-label fav-side-label"
-				class:fav-dimmed={locks.gradientScale || !effectiveFavicon.useGradient}
-			>
-				Grad Scale
-			</span>
-		</div>
+
+			<!-- ════════════════ SOLID COLOR ════════════════ -->
+			<div class="ctrl-row">
+				<span class="col-logo-label row-label" class:fav-dimmed={logo.useGradient}>Solid Color</span
+				>
+				<span class="col-logo-num"></span>
+				<div class="col-logo-slider color-area" class:fav-dimmed={logo.useGradient}>
+					<input
+						type="color"
+						bind:value={logo.solidColor}
+						class="color-swatch"
+						disabled={logo.useGradient}
+					/>
+					<span class="color-hex">{logo.solidColor}</span>
+				</div>
+				<button
+					class="reset-btn col-reset"
+					onclick={() => resetLogoField('solidColor')}
+					title="Reset"
+					disabled={isAtDefault('solidColor')}
+					class:fav-dimmed={logo.useGradient}>↺</button
+				>
+				<div class="lock-col col-lock">
+					<button
+						class="lock-btn"
+						class:locked={locks.solidColor}
+						onclick={() => toggleLock('solidColor')}
+						title={locks.solidColor ? 'Locked to logo' : 'Unlock favicon'}
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html locks.solidColor ? ICON_LOCK : ICON_UNLOCK}
+					</button>
+				</div>
+				<div
+					class="col-fav-slider color-area"
+					class:fav-dimmed={locks.solidColor || effectiveFavicon.useGradient}
+				>
+					<input
+						type="color"
+						bind:value={favicon.solidColor}
+						class="color-swatch"
+						disabled={locks.solidColor || effectiveFavicon.useGradient}
+					/>
+					<span class="color-hex">{favicon.solidColor}</span>
+				</div>
+				<span class="col-fav-num"></span>
+				<span
+					class="col-fav-label row-label fav-side-label"
+					class:fav-dimmed={locks.solidColor || effectiveFavicon.useGradient}
+				>
+					Solid Color
+				</span>
+			</div>
+
+			<!-- ════════════════ GRADIENT ANGLE ════════════════ -->
+			<div class="ctrl-row">
+				<span class="col-logo-label row-label" class:fav-dimmed={!logo.useGradient}>Grad Angle</span
+				>
+				<input
+					type="number"
+					min="0"
+					max="360"
+					bind:value={logo.gradientAngle}
+					class="ctrl-number col-logo-num"
+					class:fav-dimmed={!logo.useGradient}
+					disabled={!logo.useGradient}
+				/>
+				<input
+					type="range"
+					min="0"
+					max="360"
+					bind:value={logo.gradientAngle}
+					class="ctrl-slider col-logo-slider"
+					class:fav-dimmed={!logo.useGradient}
+					disabled={!logo.useGradient}
+				/>
+				<button
+					class="reset-btn col-reset"
+					onclick={() => resetLogoField('gradientAngle')}
+					title="Reset"
+					disabled={isAtDefault('gradientAngle')}
+					class:fav-dimmed={!logo.useGradient}>↺</button
+				>
+				<div class="lock-col col-lock">
+					<button
+						class="lock-btn"
+						class:locked={locks.gradientAngle}
+						onclick={() => toggleLock('gradientAngle')}
+						title={locks.gradientAngle ? 'Locked to logo' : 'Unlock favicon'}
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html locks.gradientAngle ? ICON_LOCK : ICON_UNLOCK}
+					</button>
+				</div>
+				<input
+					type="range"
+					min="0"
+					max="360"
+					bind:value={favicon.gradientAngle}
+					class="ctrl-slider col-fav-slider"
+					class:fav-dimmed={locks.gradientAngle || !effectiveFavicon.useGradient}
+					disabled={locks.gradientAngle || !effectiveFavicon.useGradient}
+				/>
+				<input
+					type="number"
+					min="0"
+					max="360"
+					bind:value={favicon.gradientAngle}
+					class="ctrl-number col-fav-num"
+					class:fav-dimmed={locks.gradientAngle || !effectiveFavicon.useGradient}
+					disabled={locks.gradientAngle || !effectiveFavicon.useGradient}
+				/>
+				<span
+					class="col-fav-label row-label fav-side-label"
+					class:fav-dimmed={locks.gradientAngle || !effectiveFavicon.useGradient}
+				>
+					Grad Angle
+				</span>
+			</div>
+
+			<!-- ════════════════ GRADIENT POSITION ════════════════ -->
+			<div class="ctrl-row">
+				<span class="col-logo-label row-label" class:fav-dimmed={!logo.useGradient}
+					>Grad Position</span
+				>
+				<input
+					type="number"
+					min="-100"
+					max="100"
+					bind:value={logo.gradientPosition}
+					class="ctrl-number col-logo-num"
+					class:fav-dimmed={!logo.useGradient}
+					disabled={!logo.useGradient}
+				/>
+				<input
+					type="range"
+					min="-100"
+					max="100"
+					bind:value={logo.gradientPosition}
+					class="ctrl-slider col-logo-slider"
+					class:fav-dimmed={!logo.useGradient}
+					disabled={!logo.useGradient}
+				/>
+				<button
+					class="reset-btn col-reset"
+					onclick={() => resetLogoField('gradientPosition')}
+					title="Reset"
+					disabled={isAtDefault('gradientPosition')}
+					class:fav-dimmed={!logo.useGradient}>↺</button
+				>
+				<div class="lock-col col-lock">
+					<button
+						class="lock-btn"
+						class:locked={locks.gradientPosition}
+						onclick={() => toggleLock('gradientPosition')}
+						title={locks.gradientPosition ? 'Locked to logo' : 'Unlock favicon'}
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html locks.gradientPosition ? ICON_LOCK : ICON_UNLOCK}
+					</button>
+				</div>
+				<input
+					type="range"
+					min="-100"
+					max="100"
+					bind:value={favicon.gradientPosition}
+					class="ctrl-slider col-fav-slider"
+					class:fav-dimmed={locks.gradientPosition || !effectiveFavicon.useGradient}
+					disabled={locks.gradientPosition || !effectiveFavicon.useGradient}
+				/>
+				<input
+					type="number"
+					min="-100"
+					max="100"
+					bind:value={favicon.gradientPosition}
+					class="ctrl-number col-fav-num"
+					class:fav-dimmed={locks.gradientPosition || !effectiveFavicon.useGradient}
+					disabled={locks.gradientPosition || !effectiveFavicon.useGradient}
+				/>
+				<span
+					class="col-fav-label row-label fav-side-label"
+					class:fav-dimmed={locks.gradientPosition || !effectiveFavicon.useGradient}
+				>
+					Grad Position
+				</span>
+			</div>
+
+			<!-- ════════════════ GRADIENT SCALE ════════════════ -->
+			<div class="ctrl-row">
+				<span class="col-logo-label row-label" class:fav-dimmed={!logo.useGradient}>Grad Scale</span
+				>
+				<input
+					type="number"
+					min="0.1"
+					max="3"
+					step="0.05"
+					bind:value={logo.gradientScale}
+					class="ctrl-number col-logo-num"
+					class:fav-dimmed={!logo.useGradient}
+					disabled={!logo.useGradient}
+				/>
+				<input
+					type="range"
+					min="0.1"
+					max="3"
+					step="0.05"
+					bind:value={logo.gradientScale}
+					class="ctrl-slider col-logo-slider"
+					class:fav-dimmed={!logo.useGradient}
+					disabled={!logo.useGradient}
+				/>
+				<button
+					class="reset-btn col-reset"
+					onclick={() => resetLogoField('gradientScale')}
+					title="Reset"
+					disabled={isAtDefault('gradientScale')}
+					class:fav-dimmed={!logo.useGradient}>↺</button
+				>
+				<div class="lock-col col-lock">
+					<button
+						class="lock-btn"
+						class:locked={locks.gradientScale}
+						onclick={() => toggleLock('gradientScale')}
+						title={locks.gradientScale ? 'Locked to logo' : 'Unlock favicon'}
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html locks.gradientScale ? ICON_LOCK : ICON_UNLOCK}
+					</button>
+				</div>
+				<input
+					type="range"
+					min="0.1"
+					max="3"
+					step="0.05"
+					bind:value={favicon.gradientScale}
+					class="ctrl-slider col-fav-slider"
+					class:fav-dimmed={locks.gradientScale || !effectiveFavicon.useGradient}
+					disabled={locks.gradientScale || !effectiveFavicon.useGradient}
+				/>
+				<input
+					type="number"
+					min="0.1"
+					max="3"
+					step="0.05"
+					bind:value={favicon.gradientScale}
+					class="ctrl-number col-fav-num"
+					class:fav-dimmed={locks.gradientScale || !effectiveFavicon.useGradient}
+					disabled={locks.gradientScale || !effectiveFavicon.useGradient}
+				/>
+				<span
+					class="col-fav-label row-label fav-side-label"
+					class:fav-dimmed={locks.gradientScale || !effectiveFavicon.useGradient}
+				>
+					Grad Scale
+				</span>
+			</div>
+		</article>
 	</div>
 
 	<!-- ── App info ─────────────────────────────────────────────────────── -->
@@ -1423,17 +1715,81 @@
 		</div>
 	</details>
 
-	<!-- ── Download All ──────────────────────────────────────────────────── -->
+	<!-- ── Config ───────────────────────────────────────────────────────── -->
+	<details class="config-section">
+		<summary>Config (import/export &amp; shareable link)</summary>
+		<div class="config-actions">
+			<button onclick={copyConfigJson} class="snippet-btn" class:active={configCopied === 'json'}>
+				{configCopied === 'json' ? 'Copied!' : 'Copy Config JSON'}
+			</button>
+			<button onclick={copyLink} class="snippet-btn" class:active={configCopied === 'link'}>
+				{configCopied === 'link' ? 'Copied!' : 'Copy Link'}
+			</button>
+		</div>
+		<div class="config-import">
+			<textarea
+				class="config-textarea"
+				bind:value={configJsonText}
+				rows={4}
+				placeholder="Paste config JSON here..."
+			></textarea>
+			<button onclick={importConfig} class="snippet-btn" disabled={!configJsonText.trim()}>
+				Import
+			</button>
+			{#if configImportError}
+				<p class="config-error">{configImportError}</p>
+			{/if}
+		</div>
+	</details>
+
+	<!-- ── Download All + Copy Snippets ───────────────────────────────── -->
 	<div class="download-all">
 		<button onclick={downloadAll} disabled={downloading} class="download-all-btn">
 			{downloading ? 'Generating…' : 'Download All (zip kit)'}
 		</button>
+		<div class="snippet-buttons">
+			<button
+				onclick={copyHtmlSnippet}
+				class="snippet-btn"
+				class:active={snippetCopied === 'html'}
+				use:tooltip={{
+					content: htmlSnippetPreview,
+					placement: 'top',
+					maxWidth: 480,
+					allowHTML: false
+				}}
+			>
+				{snippetCopied === 'html' ? 'Copied!' : 'Copy HTML'}
+			</button>
+			<button
+				onclick={copySvelteSnippet}
+				class="snippet-btn"
+				class:active={snippetCopied === 'svelte'}
+				use:tooltip={{
+					content: svelteSnippetPreview,
+					placement: 'top',
+					maxWidth: 480,
+					allowHTML: false
+				}}
+			>
+				{snippetCopied === 'svelte' ? 'Copied!' : 'Copy Svelte'}
+			</button>
+		</div>
 	</div>
 </main>
 
 <style>
 	:global(body) {
 		overflow-y: auto !important;
+	}
+
+	/* Tippy tooltip content: monospace for code snippets */
+	:global(.tippy-content) {
+		font-family: monospace;
+		font-size: 0.72rem;
+		white-space: pre;
+		line-height: 1.4;
+		text-align: left;
 	}
 
 	main {
@@ -1453,13 +1809,24 @@
 		text-transform: uppercase;
 	}
 
-	/* ── Preview row ───────────────────────────────────────────────────── */
+	/* ── Sticky preview ────────────────────────────────────────────────── */
+
+	.preview-sticky {
+		position: sticky;
+		top: 0;
+		z-index: 10;
+		background: var(--nc-bg-primary, #fff);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+		padding: 1rem 0 0.5rem;
+		margin: -1rem -1rem 0;
+		padding-left: 1rem;
+		padding-right: 1rem;
+	}
 
 	.preview-row {
 		display: flex;
 		gap: 1rem;
 		align-items: flex-end;
-		margin-bottom: 1.5rem;
 	}
 
 	.preview-panel {
@@ -1471,6 +1838,26 @@
 	}
 
 	.preview-gap {
+		width: 36px;
+		flex-shrink: 0;
+	}
+
+	/* ── Preview actions (non-sticky) ─────────────────────────────────── */
+
+	.preview-actions-row {
+		display: flex;
+		gap: 1rem;
+		align-items: flex-start;
+		justify-content: center;
+		padding: 0.75rem 0;
+		margin-bottom: 1rem;
+	}
+
+	.preview-actions-row > .preview-actions {
+		flex: 1;
+	}
+
+	.preview-actions-gap {
 		width: 36px;
 		flex-shrink: 0;
 	}
@@ -1556,7 +1943,61 @@
 	.controls-grid {
 		display: flex;
 		flex-direction: column;
+		gap: 1rem;
 		margin-bottom: 1.5rem;
+	}
+
+	/* ── Control groups (nimble.css <article> card pattern) ───────────── */
+
+	.control-group {
+		/* Strip nimble.css article chrome: no border/padding, just a container */
+		padding: 0;
+		border: none;
+		background: none;
+		margin-bottom: 0;
+	}
+
+	.control-group > header {
+		/* Use the same 8-col grid as ctrl-rows so buttons align */
+		display: grid;
+		grid-template-columns: 90px 54px 1fr 28px 36px 1fr 54px 90px;
+		align-items: center;
+		gap: 0 0.4rem;
+		/* Strip nimble.css header bleed chrome */
+		margin: 0;
+		padding: 0.35rem 0.75rem;
+		background: none;
+		border: none;
+		border-bottom: 2px solid #ddd;
+		border-radius: 0;
+	}
+
+	.group-title {
+		/* Span columns 1-3 (label + num + slider) */
+		grid-column: 1 / 4;
+		font-size: 0.85rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: #333;
+	}
+
+	.control-group > header .group-btn {
+		margin: 0; /* Strip nimble.css button bottom-margin */
+	}
+
+	.group-btn.reset-btn {
+		grid-column: 4; /* Align with per-row reset buttons */
+	}
+
+	.group-btn.lock-btn {
+		grid-column: 5; /* Align with per-row lock buttons */
+		justify-self: center;
+	}
+
+	.group-btn.reset-btn:disabled {
+		opacity: 0.3;
+		cursor: default;
 	}
 
 	.ctrl-row {
@@ -1565,7 +2006,7 @@
 		align-items: center;
 		gap: 0 0.4rem;
 		min-height: 36px;
-		padding: 4px 0.3rem;
+		padding: 4px 0.75rem;
 		border-radius: 4px;
 	}
 
@@ -1685,6 +2126,85 @@
 		padding-top: 0.25rem;
 	}
 
+	/* ── Emoji style picker ────────────────────────────────────────────── */
+
+	.emoji-style-row {
+		/* Override the 8-col grid: label in col 1, picker spans the rest */
+		align-items: start;
+		padding-top: 0.5rem;
+		padding-bottom: 0.5rem;
+	}
+
+	.emoji-style-row > .row-label {
+		padding-top: 0.25rem;
+	}
+
+	.emoji-picker-area {
+		grid-column: 2 / -1;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+
+	.emoji-cell {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.15rem;
+		padding: 0.3rem;
+		border: 2px solid transparent;
+		border-radius: 6px;
+		background: #f8f8f8;
+		cursor: pointer;
+		width: 64px;
+		transition:
+			border-color 0.15s,
+			background 0.15s;
+	}
+
+	.emoji-cell:hover {
+		background: #eef;
+		border-color: #ccc;
+	}
+
+	.emoji-cell.selected {
+		border-color: #0029c1;
+		background: #eef4ff;
+	}
+
+	.emoji-cell.mono {
+		/* Subtle visual separator from color sets */
+		background: #f0f0f0;
+	}
+
+	.emoji-cell.mono.selected {
+		background: #e8ecff;
+	}
+
+	.emoji-cell-icon {
+		width: 40px;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		overflow: hidden;
+	}
+
+	.native-emoji {
+		text-align: center;
+	}
+
+	.emoji-cell-label {
+		font-size: 0.62rem;
+		color: #666;
+		text-align: center;
+		line-height: 1.1;
+		max-width: 58px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
 	/* ── Inputs ─────────────────────────────────────────────────────────── */
 
 	.ctrl-slider {
@@ -1789,7 +2309,13 @@
 		flex-shrink: 0;
 	}
 
-	.reset-btn:hover {
+	.reset-btn:disabled {
+		opacity: 0.3;
+		cursor: default;
+		pointer-events: none;
+	}
+
+	.reset-btn:hover:not(:disabled) {
 		background: #e0e0e0;
 	}
 
@@ -1949,12 +2475,95 @@
 		min-width: 180px;
 	}
 
-	/* ── Download All ──────────────────────────────────────────────────── */
+	/* ── Config section ───────────────────────────────────────────────── */
+
+	.config-section {
+		border: 1px solid #ddd;
+		border-radius: 6px;
+		padding: 0.75rem 1rem;
+		margin-bottom: 1rem;
+	}
+
+	.config-section summary {
+		cursor: pointer;
+		font-size: 0.9rem;
+		font-weight: 500;
+		color: #444;
+		user-select: none;
+	}
+
+	.config-actions {
+		display: flex;
+		gap: 0.5rem;
+		margin-top: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.config-import {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		margin-top: 0.75rem;
+	}
+
+	.config-import > button {
+		align-self: flex-start;
+	}
+
+	.config-textarea {
+		width: 100%;
+		padding: 0.4rem 0.5rem;
+		font-family: monospace;
+		font-size: 0.8rem;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		resize: vertical;
+		box-sizing: border-box;
+	}
+
+	.config-error {
+		color: #dc2626;
+		font-size: 0.82rem;
+		margin: 0;
+	}
+
+	/* ── Download All + Snippet Buttons ───────────────────────────────── */
 
 	.download-all {
 		display: flex;
-		justify-content: center;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
 		padding: 0.5rem 0 1rem;
+	}
+
+	.snippet-buttons {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.snippet-btn {
+		padding: 0.4rem 1rem;
+		font-size: 0.85rem;
+		border-radius: 5px;
+		cursor: pointer;
+		border: 1px solid #0029c1;
+		background: transparent;
+		color: #0029c1;
+		transition:
+			background 0.15s,
+			color 0.15s;
+	}
+
+	.snippet-btn:hover {
+		background: #0029c1;
+		color: #fff;
+	}
+
+	.snippet-btn.active {
+		background: #16a34a;
+		border-color: #16a34a;
+		color: #fff;
 	}
 
 	.download-all-btn {
@@ -1997,8 +2606,14 @@
 			flex-direction: column;
 		}
 
-		.preview-gap {
+		.preview-gap,
+		.preview-actions-gap {
 			display: none;
+		}
+
+		.preview-actions-row {
+			flex-direction: column;
+			align-items: center;
 		}
 	}
 </style>

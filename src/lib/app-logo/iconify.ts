@@ -1,8 +1,11 @@
-import { detectIconSource } from './defaults.js';
+import { detectIconSource, DEFAULT_EMOJI_STYLE } from './defaults.js';
 import type { IconSourceType } from './types.js';
 
 /** Cached Iconify SVG strings keyed by icon ID */
 const iconCache = new Map<string, string>();
+
+/** Cached emoji slug resolution keyed by `${prefix}:${emoji}` */
+const emojiSlugCache = new Map<string, string | null>();
 
 /**
  * Resolved icon data ready for rendering/export.
@@ -114,13 +117,94 @@ function detectMonochrome(svg: string): boolean {
 	return true;
 }
 
+// ─── Emoji → Iconify slug resolution ────────────────────────────────────
+
+/**
+ * Convert an emoji string to its Unicode codepoint sequence (e.g. "🚀" → "1f680").
+ * Strips variation selectors (U+FE0E, U+FE0F).
+ */
+function emojiToCodepoints(emoji: string): string {
+	const codepoints: string[] = [];
+	for (const codePoint of emoji) {
+		const cp = codePoint.codePointAt(0);
+		if (cp === undefined) continue;
+		// Skip variation selectors
+		if (cp === 0xfe0e || cp === 0xfe0f) continue;
+		codepoints.push(cp.toString(16));
+	}
+	return codepoints.join('-');
+}
+
+/**
+ * Resolve an emoji to its Iconify icon slug within a given set.
+ *
+ * Strategy A: Use the Iconify search API, which accepts emoji characters
+ * directly and returns matching icon names.
+ *
+ * Returns the icon name (slug) or null if not found.
+ * Results are cached by `${prefix}:${emoji}`.
+ */
+export async function resolveEmojiSlug(emoji: string, prefix: string): Promise<string | null> {
+	const cacheKey = `${prefix}:${emoji}`;
+	const cached = emojiSlugCache.get(cacheKey);
+	if (cached !== undefined) return cached;
+
+	try {
+		// Strategy A: Iconify search API
+		const encoded = encodeURIComponent(emoji);
+		const url = `https://api.iconify.design/search?query=${encoded}&prefix=${prefix}&limit=1`;
+		const response = await fetch(url);
+
+		if (response.ok) {
+			const data = await response.json();
+			// Response format: { icons: ["prefix:name", ...] }
+			if (data.icons && data.icons.length > 0) {
+				const fullId: string = data.icons[0];
+				// Extract just the name part (after the prefix:)
+				const colonIndex = fullId.indexOf(':');
+				const slug = colonIndex >= 0 ? fullId.substring(colonIndex + 1) : fullId;
+				emojiSlugCache.set(cacheKey, slug);
+				return slug;
+			}
+		}
+
+		// Strategy B fallback: Try codepoint-based name (many sets use this)
+		const codepoints = emojiToCodepoints(emoji);
+		if (codepoints) {
+			// Try fetching directly — if it exists, the codepoint IS the name
+			const directUrl = `https://api.iconify.design/${prefix}/${codepoints}.svg`;
+			const directResponse = await fetch(directUrl, { method: 'HEAD' });
+			if (directResponse.ok) {
+				emojiSlugCache.set(cacheKey, codepoints);
+				return codepoints;
+			}
+		}
+
+		// Not found
+		emojiSlugCache.set(cacheKey, null);
+		return null;
+	} catch {
+		// Network error — don't cache failures
+		return null;
+	}
+}
+
+// ─── Main resolution ────────────────────────────────────────────────────
+
 /**
  * Resolve an icon prop value to SVG data ready for rendering.
  *
  * Handles all 4 source types: Iconify ID, emoji, inline SVG, data URL.
- * For emoji, returns a special SVG text element instead of path data.
+ * For emoji, auto-maps to an Iconify emoji set unless emojiStyle is 'native'.
+ *
+ * @param icon - The icon prop value
+ * @param emojiStyle - Iconify emoji set prefix (default: DEFAULT_EMOJI_STYLE).
+ *                     Use 'native' to disable auto-mapping and render as <text>.
  */
-export async function resolveIcon(icon: string): Promise<ResolvedIcon> {
+export async function resolveIcon(
+	icon: string,
+	emojiStyle: string = DEFAULT_EMOJI_STYLE
+): Promise<ResolvedIcon> {
 	const sourceType = detectIconSource(icon);
 
 	switch (sourceType) {
@@ -155,8 +239,22 @@ export async function resolveIcon(icon: string): Promise<ResolvedIcon> {
 		}
 
 		case 'emoji': {
-			// For emoji, we create a text-based SVG element
-			// The viewBox is set to a standard size; the emoji is centered
+			// Auto-map emoji to Iconify SVG icon
+			if (emojiStyle !== 'native') {
+				const slug = await resolveEmojiSlug(icon, emojiStyle);
+				if (slug) {
+					const iconId = `${emojiStyle}:${slug}`;
+					const svg = await fetchIconifySvg(iconId);
+					return {
+						svgContent: extractSvgContent(svg),
+						viewBox: parseViewBox(svg),
+						isMonochrome: detectMonochrome(svg),
+						sourceType: 'iconify' // Resolved as Iconify, even though input was emoji
+					};
+				}
+			}
+
+			// Fallback: platform-native <text> rendering
 			return {
 				svgContent: `<text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-size="80" font-family="'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif">${icon}</text>`,
 				viewBox: '0 0 100 100',
