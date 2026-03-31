@@ -72,6 +72,9 @@
 	"keywords": [
 		"svelte"
 	],
+	"knip": {
+		"ignoreExportsUsedInFile": true
+	},
 	"pnpm": {
 		"onlyBuiltDependencies": [
 			"esbuild"

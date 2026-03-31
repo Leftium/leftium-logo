@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { AppLogoProps, GradientConfig, IconColorMode } from './app-logo/types.js';
+	import type { AppLogoProps, GradientConfig } from './app-logo/types.js';
 	import { APP_LOGO_DEFAULTS } from './app-logo/defaults.js';
 	import { resolveIcon, type ResolvedIcon } from './app-logo/iconify.js';
 	import { applyColorMode } from './app-logo/color-transform.js';
@@ -109,6 +109,7 @@
 				style:height="{iconSize}%"
 				style:transform={iconTransform}
 			>
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 				{@html iconHtml}
 			</div>
 		{/if}

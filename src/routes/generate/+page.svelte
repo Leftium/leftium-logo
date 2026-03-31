@@ -4,7 +4,12 @@
 	import { generateAppLogoSvg } from '$lib/app-logo/generate-svg.js';
 	import { generateAppLogoPng } from '$lib/app-logo/generate-png.js';
 	import { generateZipKit } from '$lib/app-logo/generate-favicon-set.js';
-	import type { AppLogoConfig, GradientConfig, IconColorMode } from '$lib/app-logo/types.js';
+	import type {
+		AppLogoConfig,
+		CornerShape,
+		GradientConfig,
+		IconColorMode
+	} from '$lib/app-logo/types.js';
 	import { pngToIco } from '$lib/app-logo/generate-ico.js';
 
 	// ─── Lock icons (icomoon-free, inlined to avoid async fetch) ─────────────
@@ -479,6 +484,7 @@
 					onclick={() => toggleLock('icon')}
 					title={locks.icon ? 'Locked to logo' : 'Unlock favicon'}
 				>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html locks.icon ? ICON_LOCK : ICON_UNLOCK}
 				</button>
 			</div>
@@ -522,6 +528,7 @@
 					onclick={() => toggleLock('iconColor')}
 					title={locks.iconColor ? 'Locked to logo' : 'Unlock favicon'}
 				>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html locks.iconColor ? ICON_LOCK : ICON_UNLOCK}
 				</button>
 			</div>
@@ -562,6 +569,7 @@
 					onclick={() => toggleLock('iconColorModeKey')}
 					title={locks.iconColorModeKey ? 'Locked to logo' : 'Unlock favicon'}
 				>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html locks.iconColorModeKey ? ICON_LOCK : ICON_UNLOCK}
 				</button>
 			</div>
@@ -621,6 +629,7 @@
 						onclick={() => toggleLock('hueValue')}
 						title={locks.hueValue ? 'Locked to logo' : 'Unlock favicon'}
 					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 						{@html locks.hueValue ? ICON_LOCK : ICON_UNLOCK}
 					</button>
 				</div>
@@ -703,6 +712,7 @@
 						onclick={() => toggleLock('saturationValue')}
 						title={locks.saturationValue ? 'Locked to logo' : 'Unlock favicon'}
 					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 						{@html locks.saturationValue ? ICON_LOCK : ICON_UNLOCK}
 					</button>
 				</div>
@@ -777,6 +787,7 @@
 					onclick={() => toggleLock('iconSize')}
 					title={locks.iconSize ? 'Locked to logo' : 'Unlock favicon'}
 				>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html locks.iconSize ? ICON_LOCK : ICON_UNLOCK}
 				</button>
 			</div>
@@ -832,6 +843,7 @@
 					onclick={() => toggleLock('iconOffsetX')}
 					title={locks.iconOffsetX ? 'Locked to logo' : 'Unlock favicon'}
 				>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html locks.iconOffsetX ? ICON_LOCK : ICON_UNLOCK}
 				</button>
 			</div>
@@ -887,6 +899,7 @@
 					onclick={() => toggleLock('iconOffsetY')}
 					title={locks.iconOffsetY ? 'Locked to logo' : 'Unlock favicon'}
 				>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html locks.iconOffsetY ? ICON_LOCK : ICON_UNLOCK}
 				</button>
 			</div>
@@ -942,6 +955,7 @@
 					onclick={() => toggleLock('iconRotation')}
 					title={locks.iconRotation ? 'Locked to logo' : 'Unlock favicon'}
 				>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html locks.iconRotation ? ICON_LOCK : ICON_UNLOCK}
 				</button>
 			</div>
@@ -997,6 +1011,7 @@
 					onclick={() => toggleLock('cornerRadius')}
 					title={locks.cornerRadius ? 'Locked to logo' : 'Unlock favicon'}
 				>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html locks.cornerRadius ? ICON_LOCK : ICON_UNLOCK}
 				</button>
 			</div>
@@ -1067,6 +1082,7 @@
 					onclick={() => toggleLock('cornerK')}
 					title={locks.cornerK ? 'Locked to logo' : 'Unlock favicon'}
 				>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html locks.cornerK ? ICON_LOCK : ICON_UNLOCK}
 				</button>
 			</div>
@@ -1126,6 +1142,7 @@
 					onclick={() => toggleLock('useGradient')}
 					title={locks.useGradient ? 'Locked to logo' : 'Unlock favicon'}
 				>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html locks.useGradient ? ICON_LOCK : ICON_UNLOCK}
 				</button>
 			</div>
@@ -1167,6 +1184,7 @@
 					onclick={() => toggleLock('solidColor')}
 					title={locks.solidColor ? 'Locked to logo' : 'Unlock favicon'}
 				>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html locks.solidColor ? ICON_LOCK : ICON_UNLOCK}
 				</button>
 			</div>
@@ -1225,6 +1243,7 @@
 					onclick={() => toggleLock('gradientAngle')}
 					title={locks.gradientAngle ? 'Locked to logo' : 'Unlock favicon'}
 				>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html locks.gradientAngle ? ICON_LOCK : ICON_UNLOCK}
 				</button>
 			</div>
@@ -1290,6 +1309,7 @@
 					onclick={() => toggleLock('gradientPosition')}
 					title={locks.gradientPosition ? 'Locked to logo' : 'Unlock favicon'}
 				>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html locks.gradientPosition ? ICON_LOCK : ICON_UNLOCK}
 				</button>
 			</div>
@@ -1355,6 +1375,7 @@
 					onclick={() => toggleLock('gradientScale')}
 					title={locks.gradientScale ? 'Locked to logo' : 'Unlock favicon'}
 				>
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html locks.gradientScale ? ICON_LOCK : ICON_UNLOCK}
 				</button>
 			</div>
