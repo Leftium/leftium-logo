@@ -3,17 +3,8 @@
 	import { LEFTIUM_GRADIENT } from '$lib/app-logo/defaults.js';
 	import { generateAppLogoSvg } from '$lib/app-logo/generate-svg.js';
 	import { generateAppLogoPng } from '$lib/app-logo/generate-png.js';
-	import {
-		generateZipKit,
-		generateFaviconHtml,
-		generateManifest
-	} from '$lib/app-logo/generate-favicon-set.js';
-	import type {
-		AppLogoConfig,
-		GradientConfig,
-		IconColorMode,
-		CornerShape
-	} from '$lib/app-logo/types.js';
+	import { generateZipKit } from '$lib/app-logo/generate-favicon-set.js';
+	import type { AppLogoConfig, GradientConfig, IconColorMode } from '$lib/app-logo/types.js';
 	import { pngToIco } from '$lib/app-logo/generate-ico.js';
 
 	// ─── Lock icons (icomoon-free, inlined to avoid async fetch) ─────────────
@@ -1526,18 +1517,6 @@
 
 	/* ── Controls grid ─────────────────────────────────────────────────── */
 	/*
-	  8 columns:
-	  1: reset btn  24px
-	  2: logo num   54px
-	  3: logo slider 1fr
-	  4: logo label  90px   (right-aligned, closest to center)
-	  5: lock btn    36px   (center gutter)
-	  6: fav label   90px   (left-aligned, closest to center)
-	  7: fav slider  1fr
-	  8: fav num     54px
-	*/
-
-	/*
 	 * Controls grid: flex column wrapper. Each .ctrl-row is its own 8-col grid
 	 * with identical column definitions so columns visually align across rows.
 	 * NOT using subgrid — subgrid causes all rows to inherit the icon textarea's
@@ -1981,7 +1960,7 @@
 	/* ── Responsive ────────────────────────────────────────────────────── */
 
 	@media (max-width: 600px) {
-		.controls-grid {
+		.ctrl-row {
 			grid-template-columns: 64px 40px 1fr 18px 28px 1fr 40px 64px;
 			font-size: 0.78rem;
 		}

@@ -9,7 +9,6 @@ import { parse, converter, formatHex, clampChroma, displayable } from 'culori';
 import type { IconColorMode } from './types.js';
 
 const toOklch = converter('oklch');
-const toRgb = converter('rgb');
 
 /**
  * Parse a CSS color string to OKLCH components.
@@ -37,8 +36,7 @@ function oklchToHex(l: number, c: number, h: number, alpha?: number): string {
 	if (!displayable(color)) {
 		color = clampChroma(color, 'oklch') as typeof color;
 	}
-	const hex = formatHex(color);
-	return hex;
+	return formatHex(color);
 }
 
 /**

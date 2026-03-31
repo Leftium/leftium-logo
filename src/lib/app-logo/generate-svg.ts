@@ -1,6 +1,7 @@
 import type { AppLogoConfig, AppLogoProps, CornerShape, GradientConfig } from './types.js';
 import { APP_LOGO_DEFAULTS } from './defaults.js';
-import { resolveIcon, applyColorMode } from './iconify.js';
+import { resolveIcon } from './iconify.js';
+import { applyColorMode } from './color-transform.js';
 import { generateCornerPath } from './squircle.js';
 
 /**
@@ -232,6 +233,3 @@ export async function generateAppLogoSvg(
   ${iconLayer}
 </svg>`;
 }
-
-// Re-export resolveProps for use by generate-png and the component
-export { resolveProps };

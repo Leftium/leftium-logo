@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { AppLogoProps, GradientConfig, IconColorMode } from './app-logo/types.js';
 	import { APP_LOGO_DEFAULTS } from './app-logo/defaults.js';
-	import { resolveIcon, applyColorMode, type ResolvedIcon } from './app-logo/iconify.js';
+	import { resolveIcon, type ResolvedIcon } from './app-logo/iconify.js';
+	import { applyColorMode } from './app-logo/color-transform.js';
 	import { generateCornerPath } from './app-logo/squircle.js';
 
 	let {
@@ -26,7 +27,7 @@
 		const currentIcon = icon;
 		resolved = null;
 
-		resolveIcon(currentIcon!).then((result) => {
+		resolveIcon(currentIcon).then((result) => {
 			// Only update if icon hasn't changed while we were fetching
 			if (icon === currentIcon) {
 				resolved = result;
@@ -38,7 +39,7 @@
 	let coloredSvgContent = $derived.by(() => {
 		const r = resolved;
 		if (!r) return '';
-		return applyColorMode(r.svgContent, r.isMonochrome, iconColorMode!, iconColor!);
+		return applyColorMode(r.svgContent, r.isMonochrome, iconColorMode, iconColor);
 	});
 
 	// Build the full inline SVG with viewBox and 100% sizing
@@ -78,7 +79,7 @@
 	// Compute CSS clip-path for non-'round' corner shapes
 	let clipPathStyle = $derived.by(() => {
 		if (cornerShape === 'round' || !cornerRadius) return undefined;
-		const pathD = generateCornerPath(size!, cornerRadius!, cornerShape!);
+		const pathD = generateCornerPath(size, cornerRadius, cornerShape);
 		return `path('${pathD}')`;
 	});
 
@@ -131,8 +132,5 @@
 		top: 50%;
 		left: 50%;
 		translate: -50% -50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
 	}
 </style>

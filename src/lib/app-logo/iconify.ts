@@ -1,6 +1,5 @@
 import { detectIconSource } from './defaults.js';
-import type { IconColorMode, IconSourceType } from './types.js';
-import { applyColorMode as applyColorModeTransform } from './color-transform.js';
+import type { IconSourceType } from './types.js';
 
 /** Cached Iconify SVG strings keyed by icon ID */
 const iconCache = new Map<string, string>();
@@ -116,23 +115,6 @@ function detectMonochrome(svg: string): boolean {
 }
 
 /**
- * Apply color mode to SVG content.
- *
- * Supports all IconColorMode values: 'auto', 'original', 'monochrome',
- * 'grayscale', 'grayscale-tint', and { hue, saturation? }.
- *
- * Delegates to color-transform.ts for the full implementation.
- */
-export function applyColorMode(
-	svgContent: string,
-	isMonochrome: boolean,
-	colorMode: IconColorMode,
-	iconColor: string
-): string {
-	return applyColorModeTransform(svgContent, isMonochrome, colorMode, iconColor);
-}
-
-/**
  * Resolve an icon prop value to SVG data ready for rendering.
  *
  * Handles all 4 source types: Iconify ID, emoji, inline SVG, data URL.
@@ -183,11 +165,4 @@ export async function resolveIcon(icon: string): Promise<ResolvedIcon> {
 			};
 		}
 	}
-}
-
-/**
- * Clear the icon cache (useful for testing or memory management).
- */
-export function clearIconCache(): void {
-	iconCache.clear();
 }
