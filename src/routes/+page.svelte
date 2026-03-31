@@ -3,6 +3,7 @@
 	import LeftiumLogo from '$lib/LeftiumLogo.svelte';
 	import { setAnimated } from '$lib/LeftiumLogo.svelte';
 	let boundingBox: 'square' | 'default' | 'encircled' | 'cropped' = $state('default');
+	let squircle = $state(true);
 
 	// Start animated on main page
 	setAnimated(true);
@@ -27,6 +28,10 @@
 			<input type="radio" bind:group={boundingBox} value="encircled" />
 			<div>Encircled<br />(roomy)</div>
 		</label>
+		<label class="checkbox-label">
+			<input type="checkbox" bind:checked={squircle} />
+			Squircle
+		</label>
 	</div>
 	<div>
 		<a href={resolve('/generate')}><b>App Logo Generator</b></a>
@@ -37,7 +42,7 @@
 	</div>
 
 	<div class="logo-wrapper {boundingBox}">
-		<LeftiumLogo size="calc(min(60svh, 60svw))" {boundingBox}></LeftiumLogo>
+		<LeftiumLogo size="calc(min(60svh, 60svw))" {boundingBox} {squircle}></LeftiumLogo>
 	</div>
 </center>
 
@@ -79,6 +84,13 @@
 
 	label input[type='radio'] {
 		align-self: center;
+	}
+
+	.controls label.checkbox-label {
+		flex-basis: auto;
+		flex: 0 0 auto;
+		align-items: center;
+		gap: 5px;
 	}
 
 	label div {

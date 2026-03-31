@@ -35,6 +35,7 @@
 	import { Ripples, type RipplesOptions } from '$lib/webgl-ripples/webgl-ripples.js';
 
 	import logoGlow from '$lib/assets/logo-parts/glow.svg';
+	import logoGlowSquircle from '$lib/assets/logo-parts/glow-squircle.svg';
 	import logoLigature from '$lib/assets/logo-parts/ligature.svg';
 	import logoShadow from '$lib/assets/logo-parts/shadow.svg';
 	import logoSquare from '$lib/assets/logo-parts/square.svg?inline';
@@ -44,20 +45,55 @@
 		toggleAnimationWithShift?: boolean;
 		ripplesOptions?: RipplesOptions;
 		boundingBox?: 'square' | 'default' | 'cropped' | 'encircled';
+		squircle?: boolean;
 		class?: string;
 		onClick?: (event: MouseEvent | KeyboardEvent) => void;
 		[key: string]: unknown; // Allow any additional props
 	}
+
+	// Squircle clip-path (50% radius, K=2 superellipse, CSS polygon with percentages)
+	const SQUIRCLE_CLIP =
+		'polygon(50% 0%, 53.05% 0%, 55.96% 0%, 58.74% 0%, 61.38% 0%, 63.89% 0%, 66.27% 0%, 68.54% 0.01%, 70.69% 0.01%, 72.73% 0.02%, 74.66% 0.03%, 76.48% 0.04%, 78.21% 0.06%, 79.84% 0.09%, 81.37% 0.11%, 82.82% 0.15%, 84.18% 0.2%, 85.46% 0.25%, 86.66% 0.31%, 87.78% 0.39%, 88.83% 0.48%, 89.81% 0.58%, 90.73% 0.7%, 91.58% 0.83%, 92.37% 0.99%, 93.11% 1.16%, 93.79% 1.36%, 94.41% 1.58%, 94.99% 1.83%, 95.53% 2.11%, 96.02% 2.41%, 96.47% 2.75%, 96.88% 3.13%, 97.25% 3.53%, 97.59% 3.98%, 97.89% 4.47%, 98.17% 5.01%, 98.42% 5.59%, 98.64% 6.21%, 98.84% 6.89%, 99.01% 7.63%, 99.17% 8.42%, 99.3% 9.27%, 99.42% 10.19%, 99.52% 11.17%, 99.61% 12.22%, 99.69% 13.34%, 99.75% 14.54%, 99.8% 15.82%, 99.85% 17.18%, 99.89% 18.63%, 99.91% 20.16%, 99.94% 21.79%, 99.96% 23.52%, 99.97% 25.34%, 99.98% 27.27%, 99.99% 29.31%, 99.99% 31.46%, 100% 33.73%, 100% 36.11%, 100% 38.62%, 100% 41.26%, 100% 44.04%, 100% 46.95%, 100% 50%, 100% 50%, 100% 53.05%, 100% 55.96%, 100% 58.74%, 100% 61.38%, 100% 63.89%, 100% 66.27%, 99.99% 68.54%, 99.99% 70.69%, 99.98% 72.73%, 99.97% 74.66%, 99.96% 76.48%, 99.94% 78.21%, 99.91% 79.84%, 99.89% 81.37%, 99.85% 82.82%, 99.8% 84.18%, 99.75% 85.46%, 99.69% 86.66%, 99.61% 87.78%, 99.52% 88.83%, 99.42% 89.81%, 99.3% 90.73%, 99.17% 91.58%, 99.01% 92.37%, 98.84% 93.11%, 98.64% 93.79%, 98.42% 94.41%, 98.17% 94.99%, 97.89% 95.53%, 97.59% 96.02%, 97.25% 96.47%, 96.88% 96.88%, 96.47% 97.25%, 96.02% 97.59%, 95.53% 97.89%, 94.99% 98.17%, 94.41% 98.42%, 93.79% 98.64%, 93.11% 98.84%, 92.37% 99.01%, 91.58% 99.17%, 90.73% 99.3%, 89.81% 99.42%, 88.83% 99.52%, 87.78% 99.61%, 86.66% 99.69%, 85.46% 99.75%, 84.18% 99.8%, 82.82% 99.85%, 81.37% 99.89%, 79.84% 99.91%, 78.21% 99.94%, 76.48% 99.96%, 74.66% 99.97%, 72.73% 99.98%, 70.69% 99.99%, 68.54% 99.99%, 66.27% 100%, 63.89% 100%, 61.38% 100%, 58.74% 100%, 55.96% 100%, 53.05% 100%, 50% 100%, 50% 100%, 46.95% 100%, 44.04% 100%, 41.26% 100%, 38.62% 100%, 36.11% 100%, 33.73% 100%, 31.46% 99.99%, 29.31% 99.99%, 27.27% 99.98%, 25.34% 99.97%, 23.52% 99.96%, 21.79% 99.94%, 20.16% 99.91%, 18.63% 99.89%, 17.18% 99.85%, 15.82% 99.8%, 14.54% 99.75%, 13.34% 99.69%, 12.22% 99.61%, 11.17% 99.52%, 10.19% 99.42%, 9.27% 99.3%, 8.42% 99.17%, 7.63% 99.01%, 6.89% 98.84%, 6.21% 98.64%, 5.59% 98.42%, 5.01% 98.17%, 4.47% 97.89%, 3.98% 97.59%, 3.53% 97.25%, 3.13% 96.88%, 2.75% 96.47%, 2.41% 96.02%, 2.11% 95.53%, 1.83% 94.99%, 1.58% 94.41%, 1.36% 93.79%, 1.16% 93.11%, 0.99% 92.37%, 0.83% 91.58%, 0.7% 90.73%, 0.58% 89.81%, 0.48% 88.83%, 0.39% 87.78%, 0.31% 86.66%, 0.25% 85.46%, 0.2% 84.18%, 0.15% 82.82%, 0.11% 81.37%, 0.09% 79.84%, 0.06% 78.21%, 0.04% 76.48%, 0.03% 74.66%, 0.02% 72.73%, 0.01% 70.69%, 0.01% 68.54%, 0% 66.27%, 0% 63.89%, 0% 61.38%, 0% 58.74%, 0% 55.96%, 0% 53.05%, 0% 50%, 0% 50%, 0% 46.95%, 0% 44.04%, 0% 41.26%, 0% 38.62%, 0% 36.11%, 0% 33.73%, 0.01% 31.46%, 0.01% 29.31%, 0.02% 27.27%, 0.03% 25.34%, 0.04% 23.52%, 0.06% 21.79%, 0.09% 20.16%, 0.11% 18.63%, 0.15% 17.18%, 0.2% 15.82%, 0.25% 14.54%, 0.31% 13.34%, 0.39% 12.22%, 0.48% 11.17%, 0.58% 10.19%, 0.7% 9.27%, 0.83% 8.42%, 0.99% 7.63%, 1.16% 6.89%, 1.36% 6.21%, 1.58% 5.59%, 1.83% 5.01%, 2.11% 4.47%, 2.41% 3.98%, 2.75% 3.53%, 3.13% 3.13%, 3.53% 2.75%, 3.98% 2.41%, 4.47% 2.11%, 5.01% 1.83%, 5.59% 1.58%, 6.21% 1.36%, 6.89% 1.16%, 7.63% 0.99%, 8.42% 0.83%, 9.27% 0.7%, 10.19% 0.58%, 11.17% 0.48%, 12.22% 0.39%, 13.34% 0.31%, 14.54% 0.25%, 15.82% 0.2%, 17.18% 0.15%, 18.63% 0.11%, 20.16% 0.09%, 21.79% 0.06%, 23.52% 0.04%, 25.34% 0.03%, 27.27% 0.02%, 29.31% 0.01%, 31.46% 0.01%, 33.73% 0%, 36.11% 0%, 38.62% 0%, 41.26% 0%, 44.04% 0%, 46.95% 0%, 50% 0%)';
 
 	let {
 		size = '100%',
 		toggleAnimationWithShift = false,
 		ripplesOptions: ripplesOptionsProp = {},
 		boundingBox = 'default',
+		squircle = false,
 		class: className = '',
 		onClick = undefined,
 		...restProps
 	}: Props = $props();
+
+	// Ligature positioning: original (square) vs squircle-adjusted base values
+	// Square: original positioning where ligature inner corners touch the square corners
+	const LIG_ORIG_W = 440;
+	const LIG_ORIG_H = 666;
+	const LIG_ORIG_L = 133.5;
+	const LIG_ORIG_T = -65.75;
+	const BLUR_PAD_ORIG = 50; // shadow extends 50px beyond ligature on each side
+
+	// Squircle: scaled to align inner corners with squircle boundary
+	// (base 94.46% * 1.023 scale, offset x=-6.5, y=7)
+	const LIG_SQRC_W = 425.2;
+	const LIG_SQRC_H = 643.6;
+	const LIG_SQRC_L = 129.5;
+	const LIG_SQRC_T = -47.6;
+	const BLUR_PAD_SQRC = 48.3;
+
+	// Select positioning values depending on squircle mode
+	let ligW = $derived(squircle ? LIG_SQRC_W : LIG_ORIG_W);
+	let ligH = $derived(squircle ? LIG_SQRC_H : LIG_ORIG_H);
+	let ligL = $derived(squircle ? LIG_SQRC_L : LIG_ORIG_L);
+	let ligT = $derived(squircle ? LIG_SQRC_T : LIG_ORIG_T);
+
+	// Shadow tracks ligature center + blur padding
+	let blurPad = $derived(squircle ? BLUR_PAD_SQRC : BLUR_PAD_ORIG);
+	let shadW = $derived(ligW + blurPad * 2);
+	let shadH = $derived(ligH + blurPad * 2);
+	let shadL = $derived(ligL - blurPad);
+	let shadT = $derived(ligT - blurPad);
 
 	// Use global animation state shared across ALL instances
 	let animated = $state(globalAnimated);
@@ -307,16 +343,14 @@
 			// Now we need to scale them for each element's actual size
 			for (const el of animatedElements) {
 				if (el.classList.contains('shadow')) {
-					// Shadow is 540x766, need to scale movement to match original animation
-					// Original: 4% of 800px = 32px. For shadow: 32px / 540px = 5.93%
-					const scaleX = 800 / 540;
-					const scaleY = 800 / 766;
+					// Shadow is 510.1x723.6 (scaled 94.46% for squircle)
+					const scaleX = 800 / 510.1;
+					const scaleY = 800 / 723.6;
 					(el as HTMLElement).style.transform = `translate(${dx * scaleX}%, ${dy * scaleY}%)`;
 				} else if (el.classList.contains('ligature')) {
-					// Ligature is 440x666, need to scale movement to match original animation
-					// Original: 4% of 800px = 32px. For ligature: 32px / 440px = 7.27%
-					const scaleX = 800 / 440;
-					const scaleY = 800 / 666;
+					// Ligature is 415.6x629.1 (scaled 94.46% for squircle)
+					const scaleX = 800 / 415.6;
+					const scaleY = 800 / 629.1;
 					(el as HTMLElement).style.transform = `translate(${dx * scaleX}%, ${dy * scaleY}%)`;
 				} else {
 					// Default for any other animated elements
@@ -374,11 +408,17 @@
 
 <logo-container style:--size={size} class="{boundingBox} {className}" role="none" {...restProps}>
 	<grid-logo {@attach logoAnimation}>
-		<img class="animate shadow" alt="" src={logoShadow} />
-		<img class="glow" alt="" src={logoGlow} />
+		<img
+			class="animate shadow"
+			alt=""
+			src={logoShadow}
+			style="width:calc(100% * {shadW} / 532);height:calc(100% * {shadH} / 532);left:calc(100% * {shadL} / 532);top:calc(100% * {shadT} / 532)"
+		/>
+		<img class="glow" alt="" src={squircle ? logoGlowSquircle : logoGlow} />
 		<d-ripple
 			class="square"
 			style:background-image={`url("${logoSquare}")`}
+			style:clip-path={squircle ? SQUIRCLE_CLIP : 'none'}
 			bind:offsetWidth={ripplesWidth}
 			onclick={handleClick}
 			onkeydown={handleClick}
@@ -386,7 +426,12 @@
 			tabindex="0"
 			aria-label="Toggle logo animation"
 		></d-ripple>
-		<img class="animate ligature" alt="" src={logoLigature} />
+		<img
+			class="animate ligature"
+			alt=""
+			src={logoLigature}
+			style="width:calc(100% * {ligW} / 532);height:calc(100% * {ligH} / 532);left:calc(100% * {ligL} / 532);top:calc(100% * {ligT} / 532)"
+		/>
 	</grid-logo>
 </logo-container>
 
@@ -512,28 +557,14 @@
 		pointer-events: none;
 	}
 
-	/* Shadow - 540x766, positioned to outline the ligature */
+	/* Shadow - dimensions/position set via inline style for dynamic ligature adjustment */
 	.shadow {
-		width: calc(100% * 540 / 532);
-		height: calc(100% * 766 / 532);
-		/* Shadow should be centered on ligature */
-		/* Ligature is 440x666, shadow is 540x766 */
-		/* Shadow is (540-440)/2 = 50px wider on each side, (766-666)/2 = 50px taller on each side */
-		left: calc(100% * (133 - 50) / 532); /* Center shadow on ligature */
-		top: calc(100% * (-66 - 50) / 532);
 		z-index: 0;
-		/* Shadow should not capture clicks */
 		pointer-events: none;
 	}
 
-	/* Ligature - 440x666, positioned based on SVG */
+	/* Ligature - dimensions/position set via inline style */
 	.ligature {
-		width: calc(100% * 440 / 532);
-		height: calc(100% * 666 / 532);
-		/* Ligature extends to the right and below the square */
-		/* Looking at the SVG path, the ligature starts at top-left and extends right and down */
-		left: calc(100% * 133.5 / 532);
-		top: calc(100% * -65.75 / 532);
 		z-index: 3;
 		pointer-events: none;
 	}

@@ -591,6 +591,87 @@ Phase 3 adds:
 | `jszip`             | Zip file generation for "Download All"        | Yes (devDependency, ~45KB gzipped)                      |
 | `modern-screenshot` | DOM-to-image fallback for emoji/complex cases | Optional, only if programmatic SVG path is insufficient |
 
+---
+
+## Leftium Brand Logo: Squircle Variant
+
+The `LeftiumLogo.svelte` component (the animated brand mark on the homepage) was
+updated to support a squircle rendering mode in addition to the original sharp square.
+
+### `squircle` prop
+
+A new boolean prop `squircle` (default `false`) on `LeftiumLogo` switches all three
+visual layers simultaneously:
+
+| Layer                | Square mode                                            | Squircle mode                                         |
+| -------------------- | ------------------------------------------------------ | ----------------------------------------------------- |
+| Blue gradient square | Sharp rect (original)                                  | CSS `clip-path: polygon(...)` superellipse            |
+| White glow           | `glow.svg` — blurred white rect                        | `glow-squircle.svg` — blurred white superellipse path |
+| White ligature       | Original positioning (440×666, left=133.5, top=−65.75) | Squircle-adjusted positioning (see below)             |
+
+A **Squircle** checkbox on the homepage (`/`) toggles the prop live.
+
+### Squircle clip-path
+
+The blue square and WebGL ripple canvas are clipped using a pre-computed CSS
+`clip-path: polygon(...)` with percentage coordinates (50% radius, K=2 superellipse,
+64 segments per corner). Using percentages means the clip scales automatically with
+the element size — no JavaScript needed at render time.
+
+This approach clips both the `background-image` (the SVG gradient) and the WebGL
+ripple canvas in one step, preventing ripples from "escaping" the squircle corners.
+
+**Algorithm**: Same superellipse formula as `squircle.ts` (CSS Borders Level 4):
+`K = 2^abs(curvature)`, sampling `(T^K, (1-T)^K)` at 64 points per corner.
+At `curvature=2`, `K=4`.
+
+### Squircle glow
+
+`glow-squircle.svg` replaces the white `<rect>` in `glow.svg` with the same
+superellipse `<path>` (offset to match the rect's position). The Gaussian blur
+(`stdDeviation=50.9`) then follows the squircle contour, reducing glow at the
+corners and hugging the curved edges.
+
+### Ligature repositioning
+
+The ligature is a stroked path (200px stroke-width) whose inner V-corners
+originally touched the top-right and bottom-right corners of the sharp square.
+When the square becomes a squircle, those corners move inward, so the ligature
+needs to be repositioned to keep the inner corners touching the new boundary.
+
+**Geometry**: At 50% radius K=2, the squircle boundary at the 45° diagonal from
+each corner is approximately 50px inward (35.36px on each axis). The inner stroke
+corners are at ~45° from the square center, so a uniform scale is applied.
+
+**Computed scale**: `749.99 / 794.00 ≈ 0.9446` (distance from center to squircle
+corner vs. distance to original inner corner). The ligature is then fine-tuned
+to `scale=1.023, offsetX=−6.5, offsetY=7` to align the "e" arc bottom with the
+squircle boundary.
+
+**Final squircle ligature constants** (in the 532-unit CSS coordinate space):
+
+|                 | Square (original) | Squircle (adjusted) |
+| --------------- | ----------------- | ------------------- |
+| Width           | 440               | 425.2               |
+| Height          | 666               | 643.6               |
+| Left            | 133.5             | 129.5               |
+| Top             | −65.75            | −47.6               |
+| Shadow blur pad | 50                | 48.3                |
+
+The shadow SVG (`shadow.svg`) is a blurred copy of the ligature path and tracks
+the ligature position automatically (shadow = ligature bounds + blur pad on each side).
+
+### Files
+
+```
+src/lib/
+  LeftiumLogo.svelte            # squircle prop, dual ligature positioning
+  assets/logo-parts/
+    glow-squircle.svg           # new: squircle-shaped glow source
+```
+
+---
+
 ### Phase 4: Config Persistence, Sharing & Emoji Mapping
 
 Shareable URLs, JSON import/export, copy-ready code/HTML snippets, and
