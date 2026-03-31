@@ -591,6 +591,405 @@ Phase 3 adds:
 | `jszip`             | Zip file generation for "Download All"        | Yes (devDependency, ~45KB gzipped)                      |
 | `modern-screenshot` | DOM-to-image fallback for emoji/complex cases | Optional, only if programmatic SVG path is insufficient |
 
+### Phase 4: Config Persistence, Sharing & Emoji Mapping
+
+Shareable URLs, JSON import/export, copy-ready code/HTML snippets, and
+cross-platform emoji rendering via Iconify auto-mapping.
+
+**Status: Pending**
+
+**Scope:**
+
+- Homepage link to `/generate` ✅ (already added)
+- Sticky preview row (previews stay visible while scrolling controls)
+- Config JSON import/export UI
+- Shareable URLs (hash-based config encoding)
+- Copy HTML snippet button
+- Copy Svelte component code snippet
+- Emoji → Iconify auto-mapping (configurable, with visual comparison grid)
+
+---
+
+#### 4a. Sticky Preview Row
+
+On shorter screens the preview row scrolls out of view while the user adjusts
+lower controls (corner shape, gradient, etc.), making it impossible to see the
+effect of changes in real time.
+
+**Fix**: Make the preview row sticky so it remains visible at the top of the
+viewport while the controls scroll beneath it.
+
+**What sticks**: Only the `AppLogo` previews (the `.checkerboard` containers
+with logo at 256px and favicon at 96/32/16px) and the column headings
+("Logo" / "Favicon"). The download/copy action buttons (`.preview-actions`)
+are **not** included in the sticky area — they're useful but not essential
+during editing, and they add visual weight that would compete with the
+previews.
+
+**Implementation**:
+
+- Wrap the sticky portion in a new `<div class="preview-sticky">` inside
+  `.preview-row`. The `.preview-actions` and `<h2>` headings move below it.
+- CSS:
+  ```css
+  .preview-sticky {
+  	position: sticky;
+  	top: 0;
+  	z-index: 10;
+  	background: var(--nc-bg-primary, #fff);
+  	/* subtle bottom shadow to indicate floating */
+  	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  	padding-bottom: 0.5rem;
+  }
+  ```
+- The sticky container uses a solid background (matching the page) to prevent
+  controls from bleeding through behind the previews.
+- On tall screens where everything fits, the sticky behavior has no visual
+  effect — it only activates when the user scrolls.
+
+**Layout restructure**:
+
+```
+Before:                          After:
+┌─ .preview-row ───────────┐    ┌─ .preview-sticky ────────────┐  ← sticky
+│  checkerboard (logo 256) │    │  checkerboard (logo 256)     │
+│  actions [Copy][SVG]...  │    │  checkerboard (fav 96/32/16) │
+│  <h2>Logo</h2>           │    │  <h2>Logo</h2>  <h2>Fav</h2>│
+│  ── gap ──               │    └──────────────────────────────┘
+│  checkerboard (fav 96…)  │    ┌─ .preview-actions ───────────┐  ← scrolls
+│  actions [Copy][ICO]...  │    │  [Copy][SVG][PNG]  [Copy]... │
+│  <h2>Favicon</h2>        │    └──────────────────────────────┘
+└──────────────────────────┘    ┌─ controls ───────────────────┐
+                                │  ...                         │
+```
+
+---
+
+#### 4b. Config Persistence & Sharing
+
+##### JSON Import/Export
+
+A collapsible "Config" `<details>` section (between the App info section and
+Download All button) containing:
+
+- **"Copy Config JSON"** button — serializes `fullConfig` (`AppLogoConfig`) to
+  pretty-printed JSON and copies to clipboard
+- **Textarea** — for pasting a previously exported `config.json`
+- **"Import"** button — deserializes pasted JSON and applies it to the UI state
+
+**Deserialization mapping** (`AppLogoConfig` → `ColumnState`):
+
+The `AppLogoConfig` uses a structured format (`background` as `GradientConfig |
+string`, `cornerShape` as keyword) while the UI uses flat `ColumnState` fields
+(`solidColor`, `useGradient`, `gradientAngle`, `cornerK`, etc.). The import
+function must:
+
+1. Parse `background`: if string → `solidColor` + `useGradient: false`; if
+   `GradientConfig` → extract `angle`, `position`, `scale`, first color as
+   `solidColor`, `useGradient: true`
+2. Parse `cornerShape`: extract K value from `"superellipse(N)"` or map keyword
+   to K (`round`→1, `squircle`→2, `square`→10, `bevel`→0, `scoop`→-1,
+   `notch`→-10)
+3. Parse `iconColorMode`: if object (`{ hue, saturation }`) → set
+   `iconColorModeKey: 'hue'`, `hueValue`, `saturationValue`; if string → set
+   `iconColorModeKey` directly
+4. Apply shared fields to `logo` state
+5. Apply `config.favicon` overrides (if present) to `favicon` state and unlock
+   the corresponding lock for any field that differs from the logo value
+
+**Validation**: Wrap import in try/catch. On invalid JSON or missing required
+fields (`icon`), show an inline error message below the textarea. Silently
+ignore unknown fields for forward compatibility.
+
+##### Shareable URLs
+
+Encode the full config into the URL hash fragment so logos can be shared via
+link.
+
+**Format**: `#config=<base64url-encoded JSON>`
+
+```
+https://logo.leftium.com/generate#config=eyJpY29uIjoibWRpOnJvY2tldC1sYXVuY2giLC...
+```
+
+- **Encoding**: `JSON.stringify(fullConfig)` → `btoa()` (with Unicode-safe
+  encoding via `TextEncoder` + manual base64) → URL-safe base64 (replace `+`
+  with `-`, `/` with `_`, strip trailing `=`)
+- **Decoding**: On page load, check `window.location.hash` for `#config=...`.
+  If present, decode base64 → JSON.parse → apply via the same import logic as
+  JSON paste
+- **Live URL updates**: Debounced (500ms) `$effect` that updates
+  `window.location.hash` via `history.replaceState()` (no navigation, no
+  history spam) whenever `fullConfig` changes
+- **URL priority**: Hash config takes precedence over defaults on initial load.
+  After load, the hash tracks the UI state bidirectionally
+- **"Copy Link"** button next to "Copy Config JSON" — copies the full URL
+  (with hash) to clipboard
+
+**Size considerations**: A typical config JSON is 300–600 bytes; base64
+inflates ~33%, so URLs will be 400–800 characters — well within browser limits
+(2048+ chars supported everywhere). Configs with unlocked favicon overrides
+will be on the longer end.
+
+**Empty/default state**: When the config matches `DEFAULT_STATE` exactly, the
+hash should be empty (clean URL). Only non-default values need encoding — but
+for simplicity, Phase 4 encodes the full config. Diff-based encoding can be a
+future optimization.
+
+---
+
+#### 4c. Copy Buttons
+
+##### Copy HTML Snippet
+
+A **"Copy HTML"** button in the Download All area (next to the zip button, not
+next to the per-image copy buttons). Copies the same `<link>` tag snippet that
+goes into `_snippets/favicon-html.html` in the zip:
+
+```html
+<title>My App</title>
+<link rel="icon" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/manifest.webmanifest" />
+```
+
+Uses `navigator.clipboard.writeText()`. Shows "Copied!" feedback for 1.5s
+(same pattern as existing Copy PNG buttons).
+
+##### Copy Svelte Component Code
+
+A **"Copy Svelte"** button next to "Copy HTML". Generates a minimal
+`<AppLogo>` snippet using only non-default props:
+
+```svelte
+<script>
+	import { AppLogo } from '@leftium/logo';
+</script>
+
+<AppLogo
+	icon="mdi:rocket-launch"
+	iconColor="#ffffff"
+	cornerRadius={20}
+	cornerShape="squircle"
+	background={{ colors: ['#0029c1', '#3973ff', '#0029c1'], stops: [0, 0.29, 1], angle: 45 }}
+/>
+```
+
+**Implementation**: Compare each field in `fullConfig` against `DEFAULTS`. Only
+include props that differ from defaults. String values use `prop="value"`,
+numbers/booleans/objects use `prop={value}`. The `background` prop uses the
+`AppLogoProps` format (not `ColumnState` — i.e., `GradientConfig` object or
+solid color string).
+
+If the favicon config differs from the logo config, generate a comment noting
+the favicon overrides:
+
+```svelte
+<!-- Favicon variant uses different settings:
+     iconSize={70}, cornerRadius={25} -->
+```
+
+---
+
+#### 4d. Emoji → Iconify Auto-Mapping
+
+##### Problem
+
+Emoji icons are currently rendered as SVG `<text>` elements using system fonts.
+This produces platform-dependent rendering — the same emoji looks different on
+macOS, Windows, Android, and Linux.
+
+##### Solution
+
+When the icon input is detected as emoji (by `detectIconSource()`), auto-map it
+to an equivalent Iconify SVG icon from a configurable emoji icon set. This
+produces consistent vector rendering across all platforms.
+
+##### Available emoji icon sets
+
+| Prefix                       | Name                 | Icons | Style                     | Auto-map | Notes                           |
+| ---------------------------- | -------------------- | ----: | ------------------------- | -------- | ------------------------------- |
+| `twemoji`                    | Twitter Emoji        | 3,988 | Flat, bold, colorful      | Yes      | **Default.** Widest recognition |
+| `noto`                       | Noto Emoji           | 3,710 | Google, detailed          | Yes      |                                 |
+| `openmoji`                   | OpenMoji             | 4,470 | Outline/flat, open-source | Yes      | Largest set                     |
+| `fluent-emoji`               | Fluent Emoji         | 3,126 | Microsoft 3D-style        | Yes      |                                 |
+| `fluent-emoji-flat`          | Fluent Emoji Flat    | 3,145 | Microsoft flat            | Yes      | Good for logos                  |
+| `emojione`                   | Emoji One (Colored)  | 1,834 | Classic color             | Yes      |                                 |
+| `noto-v1`                    | Noto Emoji v1        | 2,162 | Older Google style        | Yes      | Legacy                          |
+| `emojione-v1`                | Emoji One v1         | 1,262 | Legacy color              | Yes      | Legacy                          |
+| `emojione-monotone`          | Emoji One (Monotone) | 1,403 | **Monochrome**            | Yes      | Useful with `iconColor`         |
+| `fluent-emoji-high-contrast` | Fluent Emoji HC      | 1,595 | **Monochrome**            | Yes      |                                 |
+| `fxemoji`                    | Firefox OS Emoji     | 1,034 | Playful                   | **No**   | Non-standard naming             |
+| `streamline-emojis`          | Streamline Emojis    |   787 | Illustrative              | **No**   | Non-standard naming             |
+
+Sets marked "No" for auto-map use non-standard icon names (e.g., `fxemoji`
+uses `hampster` instead of `hamster`, `catside` instead of `cat`). These sets
+are still available when the user types a full Iconify ID like
+`fxemoji:rocket`, but the automatic emoji-to-Iconify mapping won't work.
+
+##### Emoji-to-Iconify name resolution
+
+1. **Extract codepoints**: Convert the emoji string to its Unicode codepoint
+   sequence. Handle multi-codepoint emoji (flags, skin tones, ZWJ sequences).
+   Strip variation selectors (`U+FE0E`, `U+FE0F`).
+
+   Examples:
+   - `🚀` → `1f680`
+   - `👨‍💻` → `1f468-200d-1f4bb` (ZWJ sequence)
+   - `🇺🇸` → `1f1fa-1f1f8` (flag)
+
+2. **Build Iconify slug**: Iconify emoji sets use human-readable slugs (e.g.,
+   `rocket`, `man-technologist`, `flag-united-states`), not codepoint-based
+   names. Two resolution strategies:
+
+   **Strategy A — Iconify search API**: Query
+   `https://api.iconify.design/search?query=<emoji>&prefix=<set>&limit=1`.
+   The API accepts emoji characters directly and returns matching icon names.
+
+   **Strategy B — Unicode CLDR name mapping**: Use the Unicode CLDR short name
+   for the codepoint (e.g., `U+1F680` → `"rocket"`) and convert to slug
+   format (`kebab-case`). Most Iconify emoji sets use CLDR-derived names.
+   A lightweight CLDR-to-slug table (~15KB for common emoji) can be embedded
+   or lazy-loaded.
+
+   **Recommended**: Try Strategy A first (most accurate); fall back to
+   Strategy B if offline or API unavailable. Cache results in the same
+   in-memory icon cache used by `resolveIcon()`.
+
+3. **Fetch SVG**: Once the Iconify slug is resolved (e.g., `twemoji:rocket`),
+   fetch via the standard Iconify pipeline in `iconify.ts`.
+
+4. **Fallback**: If no matching icon is found in the selected set, fall back to
+   the current `<text>` rendering with a visual warning indicator in the UI
+   (e.g., an orange border around the preview with a tooltip:
+   "Emoji not found in twemoji set — rendering with system font").
+
+##### UI: Emoji style picker with visual comparison
+
+When the current icon is detected as emoji, an **emoji style picker** appears
+below the icon input. Instead of a dropdown (which hides the options), all
+available emoji sets are shown simultaneously as a visual comparison grid so
+the user can see and compare renderings at a glance.
+
+**Layout** — horizontal grid of small icon previews, one per set:
+
+```
+ Emoji style:
+ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐
+ │ 🚀   │ │ 🚀   │ │ 🚀   │ │ 🚀   │ │ 🚀   │ │ 🚀   │  ...
+ │twemoj│ │ noto │ │openmo│ │fluent│ │fl-flt│ │emoji1│
+ └──────┘ └──────┘ └──────┘ └──────┘ └──────┘ └──────┘
+  ▲ selected
+```
+
+Each cell shows:
+
+- The emoji rendered via that set's Iconify SVG (fetched on demand), at ~40px
+- The set name below (abbreviated if needed)
+- A **selected** indicator (highlight border / check mark) on the active set
+- Clicking a cell selects that set as the `emojiStyle`
+
+**Grouping**: Color sets first, then monochrome sets (separated by a subtle
+divider or label). The "Platform native" option is shown as the last cell,
+rendering the emoji as a `<text>` element (i.e., the system font).
+
+**Loading**: Previews are fetched lazily. While loading, each cell shows a
+small spinner or the emoji character as placeholder text. Failed lookups
+(emoji not in that set) show the cell dimmed with a "not found" indicator.
+
+**Placement**: The picker spans the full width of the controls area (below
+the icon `<textarea>` row, above the icon color row). It's conditionally
+rendered — hidden when the icon is not emoji.
+
+**Responsive**: On narrow screens, the grid wraps to multiple rows. Each
+cell is a fixed ~64px wide (icon + label).
+
+**"Platform native" option**: The last cell in the grid. Shows the emoji
+via system font rendering. When selected, a subtle note appears:
+"Emoji appearance will vary by platform."
+
+##### Config serialization
+
+The selected emoji style is stored in `AppLogoConfig` as a new optional field:
+
+```typescript
+interface AppLogoConfig {
+	// ... existing fields ...
+	emojiStyle?: string; // Iconify prefix, e.g. "twemoji", "noto"
+	// Default: "twemoji"
+	// Set to "native" to disable auto-mapping
+}
+```
+
+This field is included in `config.json` (zip export), JSON copy, and URL hash
+so shared logos preserve the emoji rendering choice.
+
+##### Changes to `iconify.ts`
+
+The `resolveIcon()` function's `'emoji'` case changes from:
+
+```typescript
+case 'emoji':
+    return { svgContent: `<text ...>`, viewBox, isMonochrome: false, sourceType };
+```
+
+To:
+
+```typescript
+case 'emoji': {
+    if (emojiStyle !== 'native') {
+        const slug = await resolveEmojiSlug(icon, emojiStyle);
+        if (slug) {
+            // Delegate to the 'iconify' pipeline
+            return resolveIcon(`${emojiStyle}:${slug}`, emojiStyle);
+        }
+    }
+    // Fallback: platform-native <text> rendering
+    return { svgContent: `<text ...>`, viewBox, isMonochrome: false, sourceType };
+}
+```
+
+`resolveEmojiSlug(emoji: string, prefix: string)` is a new function that
+implements the codepoint → Iconify slug mapping (Strategy A/B above).
+
+**Files (new/modified):**
+
+```
+src/lib/
+  app-logo/
+    iconify.ts                  # emoji case rewrite, resolveEmojiSlug()
+    types.ts                    # emojiStyle field on AppLogoConfig
+    defaults.ts                 # DEFAULT_EMOJI_STYLE = 'twemoji'
+
+src/routes/
+  generate/
+    +page.svelte                # sticky preview, JSON import/export UI, URL hash
+                                # sync, Copy HTML/Svelte buttons, emoji style
+                                # picker grid, homepage link (done)
+```
+
+**Dependencies (Phase 4):**
+
+None required. The Iconify search API and existing fetch pipeline handle
+everything. If a CLDR name table is embedded for offline fallback, it adds
+~15KB to the bundle.
+
+**Implementation notes:**
+
+- URL hash encoding uses `TextEncoder` → `Uint8Array` → base64 to handle
+  Unicode correctly (emoji in icon names, non-ASCII app names).
+- `history.replaceState()` avoids polluting browser history with every slider
+  drag. The 500ms debounce prevents excessive calls.
+- The JSON import must handle both the full `AppLogoConfig` format (from
+  `config.json` in the zip) and potentially a raw `ColumnState` dump (for
+  internal copy/paste between sessions). Detect by checking for
+  `background` (AppLogoConfig) vs `useGradient` (ColumnState).
+- Emoji style picker renders all sets as a CSS grid of preview cells; each
+  cell lazy-fetches its icon SVG on mount via `resolveIcon()`.
+- The `resolveEmojiSlug()` cache key includes the prefix so switching styles
+  doesn't cause redundant lookups for already-resolved slugs.
+
 ---
 
 ## Open Questions / Future
@@ -598,7 +997,8 @@ Phase 3 adds:
 - [ ] Dark mode variant: auto-generate a dark-mode favicon with inverted colors?
 - [ ] CLI tool: `npx @leftium/logo generate --icon mdi:rocket --out ./static/`?
 - [ ] Batch generation: config file with multiple projects?
-- [ ] ICO generation: wrap 32px PNG in ICO container in-browser, or recommend
-      external tool? (ICO is just a container format; a single 32px PNG inside
-      works for all browsers.)
 - [ ] Should the component be SSR-compatible (no canvas dependency)?
+- [ ] Diff-based URL encoding: only encode non-default values to shorten URLs?
+- [ ] CLDR name table: embed for offline emoji resolution, or always require API?
+- [ ] Emoji skin tone support: should skin-tone modifiers be preserved in the
+      Iconify mapping, or stripped to use the default yellow?

@@ -29,8 +29,11 @@
 		</label>
 	</div>
 	<div>
-		Explore the <a href={resolve('/test')}>test/demos</a> and
-		<a href="https://github.com/Leftium/leftium-logo">source code</a>!
+		<a href={resolve('/generate')}><b>App Logo Generator</b></a>
+		&bull;
+		<a href={resolve('/test')}>Test/Demos</a>
+		&bull;
+		<a href="https://github.com/Leftium/leftium-logo">Source Code</a>
 	</div>
 
 	<div class="logo-wrapper {boundingBox}">
