@@ -1,32 +1,48 @@
 /**
  * Superellipse / corner-shape path generation.
  *
- * Follows the CSS Borders Level 4 specification for corner-shape rendering.
- * Maps CornerShape keywords to superellipse parameters and generates SVG paths.
+ * Uses the trigonometric Lamé parametrisation for SVG outline paths.
+ * This is the only approach that is both edge-tangent (no cusps at shared
+ * tangent points) and exactly traces the correct Lamé curve shape.
  *
- * The CSS spec defines the curve parametrically:
- *   K = 2^abs(curvature)
- *   For T in [0, 1]: point = mapPointToCorner(T^K, (1-T)^K)
+ * The Lamé curve for a superellipse of parameter `p`:
+ *   |a|^(2·|p|) + |b|^(2·|p|) = 1
+ *
+ * Sampled as:  θ ∈ [π/2 → 0],  e = 1/|p|
+ *   a(θ) = cos(θ)^e   (0 → 1, toward end tangent)
+ *   b(θ) = sin(θ)^e   (1 → 0, toward start tangent)
+ *   point = centre + a·(end−centre) + b·(start−centre)
+ *
+ * The arc departs start tangent to the start edge and arrives at end tangent
+ * to the end edge — so no cusps even when adjacent arcs meet at 50% radius.
+ *
+ * Exponent mapping — two-sided, continuous at param=0:
+ *
+ *   param ≥ 0:  e = 2^(1−param)      (exponential shrink, matches CSS K=2^param)
+ *   param < 0:  e = 2 − 2·param = 2·(1+|param|)  (linear grow)
+ *
+ *   Both branches give e=2 at param=0 (bevel). The negative side grows more slowly
+ *   than the mirrored positive side, matching Chrome's usable range of -16 to +16.
+ *
+ *   param = −10 → e=22    → near-notch  (a+b≈0.001)
+ *   param = −3  → e=8     → deep scoop  (a+b=0.125)
+ *   param = −1  → e=4     → scoop       (a+b=0.5)
+ *   param =  0  → e=2     → bevel       (a+b=1.0)
+ *   param = +1  → e=1     → round       (a+b=1.414, exact arc)
+ *   param = +2  → e=0.5   → squircle    (a+b=1.682)
+ *   param = +10 → e≈0.002 → near-square (a+b=1.999)
+ *
+ * Positive param: arc bows toward outer corner → convex rounding.
+ * Negative param: arc bows toward inner centre → concave scoop shapes.
  *
  * @see https://drafts.csswg.org/css-borders-4/#corner-shape-rendering
  */
 
 import type { CornerShape } from './types.js';
 
-/** Number of line segments to sample per corner arc. */
+/** Segments per corner arc. */
 const SEGMENTS = 64;
 
-/**
- * Map a CornerShape keyword or superellipse(n) to its numeric curvature parameter.
- *
- * CSS spec keyword -> superellipse parameter:
- *   round       -> 1    (standard elliptical arc)
- *   squircle    -> 2    (iOS-style continuous curvature)
- *   square      -> Infinity  (sharp 90 deg corner)
- *   bevel       -> 0    (straight diagonal cut)
- *   scoop       -> -1   (inward concave curve)
- *   notch       -> -Infinity (inward right-angle cut)
- */
 export function cornerShapeToK(shape: CornerShape): number {
 	switch (shape) {
 		case 'round':
@@ -42,7 +58,6 @@ export function cornerShapeToK(shape: CornerShape): number {
 		case 'notch':
 			return -Infinity;
 		default: {
-			// superellipse(n) -- parse the numeric value
 			const match = shape.match(/^superellipse\((.+)\)$/);
 			if (match) {
 				const val = match[1].trim();
@@ -51,206 +66,130 @@ export function cornerShapeToK(shape: CornerShape): number {
 				const n = Number(val);
 				if (!isNaN(n)) return n;
 			}
-			return 1; // fallback to round
+			return 1;
 		}
 	}
 }
 
-/**
- * Generate an SVG path `d` attribute for a rounded rectangle with a
- * superellipse corner shape.
- *
- * The curve for each corner is sampled parametrically per the CSS Borders L4 spec:
- *   K = 2^abs(curvature)
- *   point(T) = mapPointToCorner(T^K, (1-T)^K) for T in [0, 1]
- *
- * For convex shapes (curvature > 0), the curve bulges outward.
- * For concave shapes (curvature < 0), the center reference flips to the
- * outer corner, creating inward "scoop" curves.
- *
- * @param size - Square side length in pixels
- * @param cornerRadius - Corner radius as percentage (0-50)
- * @param cornerShape - CornerShape keyword or superellipse(n)
- * @returns SVG path `d` string
- */
 export function generateCornerPath(
 	size: number,
 	cornerRadius: number,
 	cornerShape: CornerShape
 ): string {
-	// No rounding needed
-	if (cornerRadius <= 0) {
-		return `M0,0 H${size} V${size} H0 Z`;
-	}
+	if (cornerRadius <= 0) return squarePath(size);
 
-	const curvature = cornerShapeToK(cornerShape);
-
-	// square (Infinity): sharp corners, radius is ignored
-	if (curvature === Infinity) {
-		return `M0,0 H${size} V${size} H0 Z`;
-	}
-
-	// Convert percentage to pixels, clamped to half the side
+	const param = cornerShapeToK(cornerShape);
 	const r = Math.min((cornerRadius / 100) * size, size / 2);
 
-	// notch (-Infinity): inward right-angle cut at each corner.
-	// Goes from tangent point on one edge INWARD to the corner-region center,
-	// then back out to the tangent point on the other edge (concave square corner).
-	if (curvature === -Infinity) {
-		return [
-			`M${rd(r)},0`,
-			`H${rd(size - r)}`,
-			// top-right: inward to center of corner region, then out
-			`L${rd(size - r)},${rd(r)}`,
-			`L${rd(size)},${rd(r)}`,
-			`V${rd(size - r)}`,
-			// bottom-right: inward to center, then out
-			`L${rd(size - r)},${rd(size - r)}`,
-			`L${rd(size - r)},${rd(size)}`,
-			`H${rd(r)}`,
-			// bottom-left: inward to center, then out
-			`L${rd(r)},${rd(size - r)}`,
-			`L0,${rd(size - r)}`,
-			`V${rd(r)}`,
-			// top-left: inward to center, then out
-			`L${rd(r)},${rd(r)}`,
-			`L${rd(r)},0`,
-			`Z`
-		].join(' ');
-	}
+	// ── Degenerate / exact cases ───────────────────────────────────────────────
 
-	// bevel (0): straight diagonal cut from tangent to tangent
-	if (curvature === 0) {
-		return [
-			`M${rd(r)},0`,
-			`H${rd(size - r)}`,
-			`L${rd(size)},${rd(r)}`,
-			`V${rd(size - r)}`,
-			`L${rd(size - r)},${rd(size)}`,
-			`H${rd(r)}`,
-			`L0,${rd(size - r)}`,
-			`V${rd(r)}`,
-			`Z`
-		].join(' ');
-	}
+	if (!isFinite(param)) return param > 0 ? squarePath(size) : notchPath(size, r);
 
-	// round (1): use SVG arc commands for a perfect quarter-ellipse.
-	// This matches what browsers render for border-radius and is exact,
-	// unlike the parametric approximation.
-	if (curvature === 1) {
-		return [
-			`M${rd(r)},0`,
-			`H${rd(size - r)}`,
-			`A${rd(r)},${rd(r)} 0 0 1 ${rd(size)},${rd(r)}`,
-			`V${rd(size - r)}`,
-			`A${rd(r)},${rd(r)} 0 0 1 ${rd(size - r)},${rd(size)}`,
-			`H${rd(r)}`,
-			`A${rd(r)},${rd(r)} 0 0 1 0,${rd(size - r)}`,
-			`V${rd(r)}`,
-			`A${rd(r)},${rd(r)} 0 0 1 ${rd(r)},0`,
-			`Z`
-		].join(' ');
-	}
+	// param=0: e=2 → bevel (|a|+|b|=1, straight diagonal)
+	if (param === 0) return bevelPath(size, r);
 
-	// Parametric superellipse curve.
-	// K = 2^abs(curvature) per the CSS spec: "Let K be 0.5^(-abs(curvature))"
-	const K = Math.pow(2, Math.abs(curvature));
-	// Invert: for the outline path (not clip-out), convex shapes use outer corner as ref
-	const useOuterAsRef = curvature > 0;
+	// param=1: exact SVG quarter-ellipse arc (round)
+	if (param === 1) return roundPath(size, r);
 
-	// Sample the corner arc and return SVG line-to commands.
-	//
-	// The CSS spec generates a "clip-out" path (what to REMOVE from the rect).
-	// Since we generate the OUTLINE path (what to KEEP), we invert the reference:
-	// - Convex (squircle, round): curveCenter = outerCorner (curve bows outward)
-	// - Concave (scoop): curveCenter = cornerCenter (curve bows inward)
-	//
-	// The parametric curve maps (T^K, (1-T)^K) through mapPointToCorner,
-	// which scales by vectors from curveCenter to the two tangent points.
+	// ── Trig Lamé ──────────────────────────────────────────────────────────────
+	// e = 2^(1-p)  for p ≥ 0   → e shrinks exponentially: bevel→circle→squircle→square
+	// e = 2-2p     for p < 0   → e grows linearly:         bevel→scoop→notch
+	// Both give e=2 at p=0 (bevel). Continuous, no special case needed at p=-1.
+	const e = param >= 0 ? Math.pow(2, 1 - param) : 2 - 2 * param;
 
 	const parts: string[] = [`M${rd(size - r)},0`];
 
-	// Top-right corner: start=(size-r, 0), end=(size, r), outer=(size, 0), center=(size-r, r)
-	parts.push(sampleCorner(size - r, 0, size, r, size, 0, size - r, r, K, useOuterAsRef));
-
-	// Right edge
+	// Top-right:    centre=(size−r, r)
+	parts.push(sampleArc(size - r, 0, size, r, size - r, r, r, e));
 	parts.push(`L${rd(size)},${rd(size - r)}`);
 
-	// Bottom-right corner: start=(size, size-r), end=(size-r, size), outer=(size, size), center=(size-r, size-r)
-	parts.push(
-		sampleCorner(size, size - r, size - r, size, size, size, size - r, size - r, K, useOuterAsRef)
-	);
-
-	// Bottom edge
+	// Bottom-right: centre=(size−r, size−r)
+	parts.push(sampleArc(size, size - r, size - r, size, size - r, size - r, r, e));
 	parts.push(`L${rd(r)},${rd(size)}`);
 
-	// Bottom-left corner: start=(r, size), end=(0, size-r), outer=(0, size), center=(r, size-r)
-	parts.push(sampleCorner(r, size, 0, size - r, 0, size, r, size - r, K, useOuterAsRef));
-
-	// Left edge
+	// Bottom-left:  centre=(r, size−r)
+	parts.push(sampleArc(r, size, 0, size - r, r, size - r, r, e));
 	parts.push(`L0,${rd(r)}`);
 
-	// Top-left corner: start=(0, r), end=(r, 0), outer=(0, 0), center=(r, r)
-	parts.push(sampleCorner(0, r, r, 0, 0, 0, r, r, K, useOuterAsRef));
+	// Top-left:     centre=(r, r)
+	parts.push(sampleArc(0, r, r, 0, r, r, r, e));
 
 	parts.push('Z');
 	return parts.join(' ');
 }
 
 /**
- * Sample a superellipse corner arc as SVG line-to commands.
+ * Sample one corner arc via the trigonometric Lamé parametrisation.
  *
- * @param sx, sy - Start point (tangent point on the "start" edge)
- * @param ex, ey - End point (tangent point on the "end" edge)
- * @param ox, oy - Outer corner point (the actual rectangle corner)
- * @param cx, cy - Center point (diagonally opposite the outer corner within the corner region)
- * @param K - Exponent: 2^abs(curvature)
- * @param useOuterAsRef - Whether to use outer corner as the curve reference point
+ * θ: π/2 → 0,  a = cos(θ)^e,  b = sin(θ)^e
+ * point = centre + a·(end−centre) + b·(start−centre)
+ *
+ * Traces |a|^(2/e) + |b|^(2/e) = 1 exactly.
+ * Departs start tangent to the start edge; arrives at end tangent to end edge.
  */
-function sampleCorner(
+function sampleArc(
 	sx: number,
 	sy: number,
 	ex: number,
 	ey: number,
-	ox: number,
-	oy: number,
 	cx: number,
 	cy: number,
-	K: number,
-	useOuterAsRef: boolean
+	r: number,
+	e: number
 ): string {
-	// For convex shapes (outline path), use outer corner so curve bows outward.
-	// For concave shapes (outline path), use inner center so curve bows inward.
-	const refX = useOuterAsRef ? ox : cx;
-	const refY = useOuterAsRef ? oy : cy;
-
-	// Vectors from curveCenter to the tangent points
-	const toEndX = ex - refX;
-	const toEndY = ey - refY;
-	const toStartX = sx - refX;
-	const toStartY = sy - refY;
-
+	const ux = (ex - cx) / r,
+		uy = (ey - cy) / r;
+	const vx = (sx - cx) / r,
+		vy = (sy - cy) / r;
 	const cmds: string[] = [];
-
-	// Sample T from 0 to 1 (exclusive of 0 since we're already at start)
 	for (let i = 1; i <= SEGMENTS; i++) {
-		const t = i / SEGMENTS;
-		const xParam = Math.pow(t, K);
-		const yParam = Math.pow(1 - t, K);
-
-		// mapPointToCorner(xParam, yParam):
-		//   refPoint + toEnd * xParam + toStart * yParam
-		const px = refX + toEndX * xParam + toStartX * yParam;
-		const py = refY + toEndY * xParam + toStartY * yParam;
-		cmds.push(`L${rd(px)},${rd(py)}`);
+		const theta = (1 - i / SEGMENTS) * (Math.PI / 2);
+		const a = Math.pow(Math.cos(theta), e);
+		const b = Math.pow(Math.sin(theta), e);
+		cmds.push(`L${rd(cx + r * (ux * a + vx * b))},${rd(cy + r * (uy * a + vy * b))}`);
 	}
-
 	return cmds.join(' ');
 }
 
-/**
- * Round a number to 2 decimal places for clean SVG output.
- */
+// ── Exact path helpers ────────────────────────────────────────────────────────
+
+function squarePath(size: number): string {
+	return `M0,0 H${size} V${size} H0 Z`;
+}
+
+function roundPath(size: number, r: number): string {
+	return [
+		`M${rd(r)},0 H${rd(size - r)}`,
+		`A${rd(r)},${rd(r)} 0 0 1 ${rd(size)},${rd(r)}`,
+		`V${rd(size - r)}`,
+		`A${rd(r)},${rd(r)} 0 0 1 ${rd(size - r)},${rd(size)}`,
+		`H${rd(r)}`,
+		`A${rd(r)},${rd(r)} 0 0 1 0,${rd(size - r)}`,
+		`V${rd(r)}`,
+		`A${rd(r)},${rd(r)} 0 0 1 ${rd(r)},0 Z`
+	].join(' ');
+}
+
+function bevelPath(size: number, r: number): string {
+	return [
+		`M${rd(r)},0 H${rd(size - r)}`,
+		`L${rd(size)},${rd(r)} V${rd(size - r)}`,
+		`L${rd(size - r)},${rd(size)} H${rd(r)}`,
+		`L0,${rd(size - r)} V${rd(r)} Z`
+	].join(' ');
+}
+
+function notchPath(size: number, r: number): string {
+	return [
+		`M${rd(r)},0 H${rd(size - r)}`,
+		`L${rd(size - r)},${rd(r)} L${rd(size)},${rd(r)}`,
+		`V${rd(size - r)} L${rd(size - r)},${rd(size - r)}`,
+		`L${rd(size - r)},${rd(size)} H${rd(r)}`,
+		`L${rd(r)},${rd(size - r)} L0,${rd(size - r)}`,
+		`V${rd(r)} L${rd(r)},${rd(r)} L${rd(r)},0 Z`
+	].join(' ');
+}
+
 function rd(n: number): number {
 	return Math.round(n * 100) / 100;
 }
