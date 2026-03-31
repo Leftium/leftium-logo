@@ -6,6 +6,6 @@
 
 <style>
 	:global(:root) {
-		--nc-content-width: 960px;
+		--nc-content-width: 1400px;
 	}
 </style>

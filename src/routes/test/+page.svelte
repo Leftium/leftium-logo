@@ -4,6 +4,11 @@
 	// Test pages listing
 	const testPages: { name: string; path: RouteId; description: string }[] = [
 		{
+			name: 'Favicon Ligature',
+			path: '/test/favicon-ligature',
+			description: 'L-only ligature for favicon: filled polygon on 5-square grid'
+		},
+		{
 			name: 'AppLogo Generator',
 			path: '/test/app-logo',
 			description: 'NEW! Generate app logos/favicons with Iconify icons on gradient backgrounds'
