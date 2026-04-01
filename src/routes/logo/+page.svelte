@@ -5,6 +5,7 @@
 	import { generateAppLogoSvg } from '$lib/app-logo/generate-svg.js';
 	import { generateAppLogoPng } from '$lib/app-logo/generate-png.js';
 	import { generateZipKit } from '$lib/app-logo/generate-favicon-set.js';
+	import { generateCornerPath } from '$lib/app-logo/squircle.js';
 	import { pngToIco } from '$lib/app-logo/generate-ico.js';
 	import {
 		type ColumnState,
@@ -46,6 +47,8 @@
 	let emojiStyle = $state(DEFAULT_EMOJI_STYLE);
 	let copying = $state<'logo' | 'favicon' | null>(null);
 	let downloading = $state(false);
+	let showGuidelines = $state(true);
+	let guidelineInsetPct = $state(7.5); // % of 256px — default matches Apple icon grid
 
 	// Is the current logo icon an emoji?
 	let isEmojiIcon = $derived(detectIconSource(logo.icon) === 'emoji');
@@ -65,6 +68,8 @@
 		iconOffsetX: locks.iconOffsetX ? logo.iconOffsetX : favicon.iconOffsetX,
 		iconOffsetY: locks.iconOffsetY ? logo.iconOffsetY : favicon.iconOffsetY,
 		iconRotation: locks.iconRotation ? logo.iconRotation : favicon.iconRotation,
+		iconMirrorH: locks.iconMirrorH ? logo.iconMirrorH : favicon.iconMirrorH,
+		iconMirrorV: locks.iconMirrorV ? logo.iconMirrorV : favicon.iconMirrorV,
 		grayscaleLightness: locks.grayscaleLightness
 			? logo.grayscaleLightness
 			: favicon.grayscaleLightness,
@@ -93,6 +98,11 @@
 		iconColorModeFromFlat(logo.iconColorModeKey, logo.hueValue, logo.saturationValue)
 	);
 	let logoBackground = $derived(backgroundFromFlat(logo));
+
+	// Guidelines: outer shape path at 256px, matching current corner settings
+	let guidelineShapePath = $derived(generateCornerPath(256, logo.cornerRadius, logoCornerShape));
+	// Guideline inset in px at 256px preview size
+	let guidelineInset = $derived((guidelineInsetPct / 100) * 256);
 
 	// ─── Derived: Favicon props ──────────────────────────────────────────────
 
@@ -252,7 +262,9 @@
 		'iconSize',
 		'iconOffsetX',
 		'iconOffsetY',
-		'iconRotation'
+		'iconRotation',
+		'iconMirrorH',
+		'iconMirrorV'
 	];
 
 	const CORNER_GROUP_FIELDS: (keyof ColumnState)[] = ['cornerRadius', 'cornerK'];
@@ -410,21 +422,75 @@
 		<div class="preview-row">
 			<div class="preview-panel">
 				<div class="checkerboard">
-					<AppLogo
-						icon={logo.icon}
-						iconColor={logo.iconColor}
-						iconColorMode={logoIconColorMode}
-						iconSize={logo.iconSize}
-						iconOffsetX={logo.iconOffsetX}
-						iconOffsetY={logo.iconOffsetY}
-						iconRotation={logo.iconRotation}
-						grayscaleLightness={logo.grayscaleLightness}
-						cornerRadius={logo.cornerRadius}
-						cornerShape={logoCornerShape}
-						background={logoBackground}
-						size={256}
-						{emojiStyle}
-					/>
+					<div class="logo-preview-container">
+						<AppLogo
+							icon={logo.icon}
+							iconColor={logo.iconColor}
+							iconColorMode={logoIconColorMode}
+							iconSize={logo.iconSize}
+							iconOffsetX={logo.iconOffsetX}
+							iconOffsetY={logo.iconOffsetY}
+							iconRotation={logo.iconRotation}
+							iconMirrorH={logo.iconMirrorH}
+							iconMirrorV={logo.iconMirrorV}
+							grayscaleLightness={logo.grayscaleLightness}
+							cornerRadius={logo.cornerRadius}
+							cornerShape={logoCornerShape}
+							background={logoBackground}
+							size={256}
+							{emojiStyle}
+						/>
+						{#if showGuidelines}
+							<!-- Guidelines overlay: dual-stroke for contrast, geometry follows corner shape -->
+							{@const g = guidelineInset}
+							{@const s = 256}
+							{@const outerR = s / 2 - g}
+							{@const innerR = (s / 2 - g) * 0.56}
+							<svg class="guidelines-overlay" viewBox="0 0 {s} {s}" width={s} height={s}>
+								<!-- Light dashes (fills gaps of dark layer) -->
+								<g class="guide-light">
+									<path d={guidelineShapePath} fill="none" />
+									<line x1={g} y1="0" x2={g} y2={s} />
+									<line x1={s - g} y1="0" x2={s - g} y2={s} />
+									<line x1="0" y1={g} x2={s} y2={g} />
+									<line x1="0" y1={s - g} x2={s} y2={s - g} />
+									<line x1={s / 2} y1="0" x2={s / 2} y2={s} />
+									<line x1="0" y1={s / 2} x2={s} y2={s / 2} />
+									<line x1="0" y1="0" x2={s} y2={s} />
+									<line x1={s} y1="0" x2="0" y2={s} />
+									<circle cx={s / 2} cy={s / 2} r={outerR} fill="none" />
+									<circle cx={s / 2} cy={s / 2} r={innerR} fill="none" />
+								</g>
+								<!-- Dark dashes -->
+								<g class="guide-dark">
+									<path d={guidelineShapePath} fill="none" />
+									<line x1={g} y1="0" x2={g} y2={s} />
+									<line x1={s - g} y1="0" x2={s - g} y2={s} />
+									<line x1="0" y1={g} x2={s} y2={g} />
+									<line x1="0" y1={s - g} x2={s} y2={s - g} />
+									<line x1={s / 2} y1="0" x2={s / 2} y2={s} />
+									<line x1="0" y1={s / 2} x2={s} y2={s / 2} />
+									<line x1="0" y1="0" x2={s} y2={s} />
+									<line x1={s} y1="0" x2="0" y2={s} />
+									<circle cx={s / 2} cy={s / 2} r={outerR} fill="none" />
+									<circle cx={s / 2} cy={s / 2} r={innerR} fill="none" />
+								</g>
+								<!-- Intersection dots -->
+								<g class="guide-dots">
+									<!-- 4 corner intersections -->
+									<circle cx={g} cy={g} r="2.5" />
+									<circle cx={s - g} cy={g} r="2.5" />
+									<circle cx={g} cy={s - g} r="2.5" />
+									<circle cx={s - g} cy={s - g} r="2.5" />
+									<!-- Midpoints on inner grid lines -->
+									<circle cx={s / 2} cy={g} r="2" />
+									<circle cx={s / 2} cy={s - g} r="2" />
+									<circle cx={g} cy={s / 2} r="2" />
+									<circle cx={s - g} cy={s / 2} r="2" />
+								</g>
+							</svg>
+						{/if}
+					</div>
 				</div>
 				<h2>Logo</h2>
 			</div>
@@ -442,6 +508,8 @@
 							iconOffsetX={effectiveFavicon.iconOffsetX}
 							iconOffsetY={effectiveFavicon.iconOffsetY}
 							iconRotation={effectiveFavicon.iconRotation}
+							iconMirrorH={effectiveFavicon.iconMirrorH}
+							iconMirrorV={effectiveFavicon.iconMirrorV}
 							grayscaleLightness={effectiveFavicon.grayscaleLightness}
 							cornerRadius={effectiveFavicon.cornerRadius}
 							cornerShape={faviconCornerShape}
@@ -460,6 +528,8 @@
 							iconOffsetX={effectiveFavicon.iconOffsetX}
 							iconOffsetY={effectiveFavicon.iconOffsetY}
 							iconRotation={effectiveFavicon.iconRotation}
+							iconMirrorH={effectiveFavicon.iconMirrorH}
+							iconMirrorV={effectiveFavicon.iconMirrorV}
 							grayscaleLightness={effectiveFavicon.grayscaleLightness}
 							cornerRadius={effectiveFavicon.cornerRadius}
 							cornerShape={faviconCornerShape}
@@ -478,6 +548,8 @@
 							iconOffsetX={effectiveFavicon.iconOffsetX}
 							iconOffsetY={effectiveFavicon.iconOffsetY}
 							iconRotation={effectiveFavicon.iconRotation}
+							iconMirrorH={effectiveFavicon.iconMirrorH}
+							iconMirrorV={effectiveFavicon.iconMirrorV}
 							grayscaleLightness={effectiveFavicon.grayscaleLightness}
 							cornerRadius={effectiveFavicon.cornerRadius}
 							cornerShape={faviconCornerShape}
@@ -487,6 +559,24 @@
 						/>
 						<span class="size-label">16px</span>
 					</div>
+				</div>
+				<div class="preview-spacer"></div>
+				<div class="guidelines-control">
+					<label class="guidelines-toggle" title="Show design guidelines overlay">
+						<input type="checkbox" bind:checked={showGuidelines} />
+						<span class="guidelines-label">Guidelines</span>
+					</label>
+					{#if showGuidelines}
+						<input
+							type="range"
+							min="0"
+							max="25"
+							step="0.5"
+							bind:value={guidelineInsetPct}
+							class="guidelines-slider"
+							title="Guide inset: {guidelineInsetPct.toFixed(1)}%"
+						/>
+					{/if}
 				</div>
 				<h2>Favicon</h2>
 			</div>
@@ -558,12 +648,17 @@
 							rows={3}
 							placeholder="Iconify ID or paste SVG..."
 						></textarea>
-						<a
-							href="https://icon-sets.iconify.design"
-							target="_blank"
-							rel="noopener"
-							class="browse-link">Browse icons →</a
-						>
+						<div class="browse-links">
+							<a
+								href="https://icon-sets.iconify.design"
+								target="_blank"
+								rel="noopener"
+								class="browse-link">Browse icons →</a
+							>
+							<a href="https://emojiterra.com/" target="_blank" rel="noopener" class="browse-link"
+								>Browse emoji →</a
+							>
+						</div>
 					</div>
 				</div>
 				<button
@@ -585,20 +680,34 @@
 				</div>
 				<div class="fav-icon-wrap" class:fav-dimmed={locks.icon}>
 					<div class="icon-input-group">
-						<textarea
-							class="icon-input"
-							bind:value={favicon.icon}
-							rows={3}
-							placeholder="Iconify ID or paste SVG..."
-							disabled={locks.icon}
-						></textarea>
+						{#if locks.icon}
+							<textarea
+								class="icon-input"
+								value={effectiveFavicon.icon}
+								rows={3}
+								placeholder="Iconify ID or paste SVG..."
+								disabled
+							></textarea>
+						{:else}
+							<textarea
+								class="icon-input"
+								bind:value={favicon.icon}
+								rows={3}
+								placeholder="Iconify ID or paste SVG..."
+							></textarea>
+						{/if}
 						{#if !locks.icon}
-							<a
-								href="https://icon-sets.iconify.design"
-								target="_blank"
-								rel="noopener"
-								class="browse-link">Browse icons →</a
-							>
+							<div class="browse-links">
+								<a
+									href="https://icon-sets.iconify.design"
+									target="_blank"
+									rel="noopener"
+									class="browse-link">Browse icons →</a
+								>
+								<a href="https://emojiterra.com/" target="_blank" rel="noopener" class="browse-link"
+									>Browse emoji →</a
+								>
+							</div>
 						{/if}
 					</div>
 					<span class="fav-icon-label">Icon</span>
@@ -992,14 +1101,14 @@
 				<input
 					type="number"
 					min="10"
-					max="100"
+					max="120"
 					bind:value={logo.iconSize}
 					class="ctrl-number col-logo-num"
 				/>
 				<input
 					type="range"
 					min="10"
-					max="100"
+					max="120"
 					bind:value={logo.iconSize}
 					class="ctrl-slider col-logo-slider"
 				/>
@@ -1023,7 +1132,7 @@
 				<input
 					type="range"
 					min="10"
-					max="100"
+					max="120"
 					bind:value={favicon.iconSize}
 					class="ctrl-slider col-fav-slider"
 					class:fav-dimmed={locks.iconSize}
@@ -1032,7 +1141,7 @@
 				<input
 					type="number"
 					min="10"
-					max="100"
+					max="120"
 					bind:value={favicon.iconSize}
 					class="ctrl-number col-fav-num"
 					class:fav-dimmed={locks.iconSize}
@@ -1211,6 +1320,73 @@
 				/>
 				<span class="col-fav-label row-label fav-side-label" class:fav-dimmed={locks.iconRotation}>
 					Rotation
+				</span>
+			</div>
+
+			<!-- ════════════════ MIRROR ════════════════ -->
+			<div class="ctrl-row">
+				<span class="col-logo-label row-label">Mirror</span>
+				<span class="col-logo-num"></span>
+				<div class="col-logo-slider mirror-checks">
+					<label class="mirror-label" title="Flip horizontally">
+						<input type="checkbox" bind:checked={logo.iconMirrorH} />
+						<span class="mirror-icon">↔</span><span>H</span>
+					</label>
+					<label class="mirror-label" title="Flip vertically">
+						<input type="checkbox" bind:checked={logo.iconMirrorV} />
+						<span class="mirror-icon">↕</span><span>V</span>
+					</label>
+				</div>
+				<button
+					class="reset-btn col-reset"
+					onclick={() => {
+						resetLogoField('iconMirrorH');
+						resetLogoField('iconMirrorV');
+					}}
+					title="Reset"
+					disabled={isAtDefault('iconMirrorH') && isAtDefault('iconMirrorV')}>↺</button
+				>
+				<div class="lock-col col-lock">
+					<button
+						class="lock-btn"
+						class:locked={locks.iconMirrorH && locks.iconMirrorV}
+						onclick={() => {
+							toggleLock('iconMirrorH');
+							toggleLock('iconMirrorV');
+						}}
+						title={locks.iconMirrorH ? 'Locked to logo' : 'Unlock favicon'}
+					>
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html locks.iconMirrorH && locks.iconMirrorV ? ICON_LOCK : ICON_UNLOCK}
+					</button>
+				</div>
+				<div
+					class="col-fav-slider mirror-checks"
+					class:fav-dimmed={locks.iconMirrorH && locks.iconMirrorV}
+				>
+					<label class="mirror-label" title="Flip horizontally">
+						<input
+							type="checkbox"
+							bind:checked={favicon.iconMirrorH}
+							disabled={locks.iconMirrorH}
+						/>
+						<span class="mirror-icon">↔</span><span>H</span>
+					</label>
+					<label class="mirror-label" title="Flip vertically">
+						<input
+							type="checkbox"
+							bind:checked={favicon.iconMirrorV}
+							disabled={locks.iconMirrorV}
+						/>
+						<span class="mirror-icon">↕</span><span>V</span>
+					</label>
+				</div>
+				<span class="col-fav-num"></span>
+				<span
+					class="col-fav-label row-label fav-side-label"
+					class:fav-dimmed={locks.iconMirrorH && locks.iconMirrorV}
+				>
+					Mirror
 				</span>
 			</div>
 		</article>
@@ -1826,7 +2002,7 @@
 	.preview-row {
 		display: flex;
 		gap: 1rem;
-		align-items: flex-end;
+		align-items: stretch;
 	}
 
 	.preview-panel {
@@ -1872,6 +2048,83 @@
 		border: 1px solid #ddd;
 		width: 100%;
 		box-sizing: border-box;
+	}
+
+	/* ── Logo preview with guidelines ──────────────────────────────────── */
+
+	.logo-preview-container {
+		position: relative;
+		width: 256px;
+		height: 256px;
+		flex-shrink: 0;
+	}
+
+	.guidelines-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		pointer-events: none;
+	}
+
+	/* Dashed guidelines: light layer */
+	.guidelines-overlay .guide-light line,
+	.guidelines-overlay .guide-light path,
+	.guidelines-overlay .guide-light circle {
+		stroke: rgba(255, 255, 255, 0.45);
+		stroke-width: 0.5;
+		stroke-dasharray: 4 4;
+		stroke-dashoffset: 4;
+	}
+
+	/* Dashed guidelines: dark layer (offset to fill gaps) */
+	.guidelines-overlay .guide-dark line,
+	.guidelines-overlay .guide-dark path,
+	.guidelines-overlay .guide-dark circle {
+		stroke: rgba(0, 0, 0, 0.3);
+		stroke-width: 0.5;
+		stroke-dasharray: 4 4;
+		stroke-dashoffset: 0;
+	}
+
+	/* Control-point dots */
+	.guidelines-overlay .guide-dots circle {
+		fill: rgba(0, 0, 0, 0.3);
+		stroke: rgba(255, 255, 255, 0.45);
+		stroke-width: 0.75;
+	}
+
+	.preview-spacer {
+		flex: 1;
+	}
+
+	.guidelines-control {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		align-self: flex-start;
+	}
+
+	.guidelines-toggle {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.78rem;
+		color: #666;
+		cursor: pointer;
+		user-select: none;
+	}
+
+	.guidelines-toggle input[type='checkbox'] {
+		margin: 0;
+	}
+
+	.guidelines-label {
+		font-size: 0.78rem;
+	}
+
+	.guidelines-slider {
+		width: 80px;
+		margin: 0;
 	}
 
 	.favicon-preview {
@@ -2236,6 +2489,38 @@
 		resize: vertical;
 		box-sizing: border-box;
 		margin: 0;
+	}
+
+	/* ── Mirror checkboxes ─────────────────────────────────────────────── */
+
+	.mirror-checks {
+		display: flex;
+		gap: 1rem;
+		align-items: center;
+		height: 28px;
+	}
+
+	.mirror-label {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		font-size: 0.85rem;
+		cursor: pointer;
+		margin: 0;
+	}
+
+	.mirror-label input[type='checkbox'] {
+		margin: 0;
+	}
+
+	.mirror-icon {
+		font-size: 1rem;
+		line-height: 1;
+	}
+
+	.browse-links {
+		display: flex;
+		gap: 1rem;
 	}
 
 	.browse-link {
