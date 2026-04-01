@@ -10,6 +10,7 @@
 		generateFaviconPng
 	} from '$lib/leftium-logo/generate-favicon-svg.js';
 	import type { FaviconConfig } from '$lib/leftium-logo/generate-favicon-svg.js';
+	import { generateLeftiumZipKit } from '$lib/leftium-logo/generate-zip-kit.js';
 
 	// Disable animation for this page immediately
 	setAnimated(false);
@@ -17,7 +18,7 @@
 	// ─── Logo State ───────────────────────────────────────────────────────────
 
 	let squircle = $state(true);
-	let boundingBox = $state<BoundingBox>('default');
+	let boundingBox = $state<BoundingBox>('encircled');
 	let background = $state('transparent');
 	let size = $state(800);
 	let copying = $state<string | null>(null);
@@ -29,7 +30,7 @@
 
 	// ─── Favicon State ────────────────────────────────────────────────────────
 
-	let faviconSquircle = $state(false);
+	let faviconSquircle = $state(true);
 	let faviconScale = $state(0.99);
 	let faviconOffsetX = $state(0);
 	let faviconOffsetY = $state(0.005);
@@ -213,6 +214,22 @@
 			console.error('Failed to download favicon SVG:', err);
 		} finally {
 			faviconDownloading = null;
+		}
+	}
+
+	// ─── Download All ─────────────────────────────────────────────────────────
+
+	let downloadingAll = $state(false);
+
+	async function downloadAll() {
+		downloadingAll = true;
+		try {
+			const zip = await generateLeftiumZipKit(config, faviconConfig);
+			downloadBlob(zip, 'leftium-logo-kit.zip');
+		} catch (err) {
+			console.error('Failed to generate zip kit:', err);
+		} finally {
+			downloadingAll = false;
 		}
 	}
 
@@ -488,6 +505,15 @@
 			</div>
 		</section>
 	</div>
+
+	<!-- ════════════════════════════════════════════════════════════════════ -->
+	<!-- DOWNLOAD ALL                                                        -->
+	<!-- ════════════════════════════════════════════════════════════════════ -->
+	<div class="download-all-row">
+		<button class="download-all-btn" onclick={downloadAll} disabled={downloadingAll}>
+			{downloadingAll ? 'Generating zip…' : 'Download All (leftium-logo-kit.zip)'}
+		</button>
+	</div>
 </main>
 
 <style>
@@ -753,5 +779,39 @@
 	.export-group button.copied {
 		background: #16a34a;
 		border-color: #16a34a;
+	}
+
+	/* ── Download All ─────────────────────────────────────────────────── */
+
+	.download-all-row {
+		display: flex;
+		justify-content: center;
+		margin-top: 2rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid #ddd;
+	}
+
+	.download-all-btn {
+		padding: 0.6rem 1.6rem;
+		font-size: 1rem;
+		font-weight: 600;
+		border: 2px solid #0029c1;
+		border-radius: 6px;
+		background: #0029c1;
+		color: #fff;
+		cursor: pointer;
+		transition:
+			background 0.15s,
+			border-color 0.15s;
+	}
+
+	.download-all-btn:hover:not(:disabled) {
+		background: #3973ff;
+		border-color: #3973ff;
+	}
+
+	.download-all-btn:disabled {
+		opacity: 0.6;
+		cursor: default;
 	}
 </style>
