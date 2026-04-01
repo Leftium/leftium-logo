@@ -27,6 +27,8 @@ export interface ColumnState {
 	iconOffsetX: number;
 	iconOffsetY: number;
 	iconRotation: number;
+	iconMirrorH: boolean;
+	iconMirrorV: boolean;
 	grayscaleLightness: number;
 	cornerRadius: number;
 	cornerK: number;
@@ -43,10 +45,12 @@ export const DEFAULT_STATE: ColumnState = {
 	iconColorModeKey: 'auto',
 	hueValue: 210,
 	saturationValue: 70,
-	iconSize: 60,
+	iconSize: 80,
 	iconOffsetX: 0,
 	iconOffsetY: 0,
 	iconRotation: 0,
+	iconMirrorH: false,
+	iconMirrorV: false,
 	grayscaleLightness: 100,
 	cornerRadius: 50,
 	cornerK: 2,
@@ -67,6 +71,8 @@ export const DEFAULT_LOCKS: Record<keyof ColumnState, boolean> = {
 	iconOffsetX: true,
 	iconOffsetY: true,
 	iconRotation: true,
+	iconMirrorH: true,
+	iconMirrorV: true,
 	grayscaleLightness: true,
 	cornerRadius: true,
 	cornerK: true,
@@ -215,6 +221,8 @@ export function buildFullConfig(
 			iconOffsetX: logoState.iconOffsetX,
 			iconOffsetY: logoState.iconOffsetY,
 			iconRotation: logoState.iconRotation,
+			iconMirrorH: logoState.iconMirrorH,
+			iconMirrorV: logoState.iconMirrorV,
 			grayscaleLightness: logoState.grayscaleLightness
 		},
 		favicon: {
@@ -228,6 +236,8 @@ export function buildFullConfig(
 			iconOffsetX: effectiveFaviconState.iconOffsetX,
 			iconOffsetY: effectiveFaviconState.iconOffsetY,
 			iconRotation: effectiveFaviconState.iconRotation,
+			iconMirrorH: effectiveFaviconState.iconMirrorH,
+			iconMirrorV: effectiveFaviconState.iconMirrorV,
 			grayscaleLightness: effectiveFaviconState.grayscaleLightness
 		}
 	};
@@ -261,6 +271,8 @@ export function buildVariantConfig(
 			iconOffsetX: col.iconOffsetX,
 			iconOffsetY: col.iconOffsetY,
 			iconRotation: col.iconRotation,
+			iconMirrorH: col.iconMirrorH,
+			iconMirrorV: col.iconMirrorV,
 			grayscaleLightness: col.grayscaleLightness
 		}
 	};
@@ -299,6 +311,8 @@ export function configToUIState(config: AppLogoConfig): {
 		iconOffsetX: config.logo?.iconOffsetX ?? DEFAULT_STATE.iconOffsetX,
 		iconOffsetY: config.logo?.iconOffsetY ?? DEFAULT_STATE.iconOffsetY,
 		iconRotation: config.logo?.iconRotation ?? DEFAULT_STATE.iconRotation,
+		iconMirrorH: config.logo?.iconMirrorH ?? DEFAULT_STATE.iconMirrorH,
+		iconMirrorV: config.logo?.iconMirrorV ?? DEFAULT_STATE.iconMirrorV,
 		grayscaleLightness: config.logo?.grayscaleLightness ?? DEFAULT_STATE.grayscaleLightness,
 		cornerRadius: config.cornerRadius ?? DEFAULT_STATE.cornerRadius,
 		cornerK: cornerShapeToK(config.cornerShape ?? 'round'),
@@ -357,6 +371,16 @@ export function configToUIState(config: AppLogoConfig): {
 		if (fav.iconRotation !== undefined && fav.iconRotation !== logoState.iconRotation) {
 			faviconState.iconRotation = fav.iconRotation;
 			locks.iconRotation = false;
+		}
+
+		if (fav.iconMirrorH !== undefined && fav.iconMirrorH !== logoState.iconMirrorH) {
+			faviconState.iconMirrorH = fav.iconMirrorH;
+			locks.iconMirrorH = false;
+		}
+
+		if (fav.iconMirrorV !== undefined && fav.iconMirrorV !== logoState.iconMirrorV) {
+			faviconState.iconMirrorV = fav.iconMirrorV;
+			locks.iconMirrorV = false;
 		}
 
 		if (
@@ -512,6 +536,12 @@ export function generateSvelteSnippet(config: AppLogoConfig): string {
 		) {
 			props.push(`\ticonRotation={${logoOverride.iconRotation}}`);
 		}
+		if (logoOverride.iconMirrorH) {
+			props.push(`\ticonMirrorH`);
+		}
+		if (logoOverride.iconMirrorV) {
+			props.push(`\ticonMirrorV`);
+		}
 		if (logoOverride.grayscaleLightness !== undefined && logoOverride.grayscaleLightness !== 100) {
 			props.push(`\tgrayscaleLightness={${logoOverride.grayscaleLightness}}`);
 		}
@@ -566,6 +596,8 @@ export function generateSvelteSnippet(config: AppLogoConfig): string {
 			favOverrides.push(`iconOffsetY={${fav.iconOffsetY}}`);
 		if (fav.iconRotation !== undefined && fav.iconRotation !== 0)
 			favOverrides.push(`iconRotation={${fav.iconRotation}}`);
+		if (fav.iconMirrorH) favOverrides.push(`iconMirrorH`);
+		if (fav.iconMirrorV) favOverrides.push(`iconMirrorV`);
 		if (fav.cornerRadius !== undefined && fav.cornerRadius !== config.cornerRadius)
 			favOverrides.push(`cornerRadius={${fav.cornerRadius}}`);
 		if (fav.cornerShape !== undefined && fav.cornerShape !== config.cornerShape)

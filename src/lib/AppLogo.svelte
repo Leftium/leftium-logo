@@ -13,6 +13,8 @@
 		iconOffsetX = APP_LOGO_DEFAULTS.iconOffsetX,
 		iconOffsetY = APP_LOGO_DEFAULTS.iconOffsetY,
 		iconRotation = APP_LOGO_DEFAULTS.iconRotation,
+		iconMirrorH = APP_LOGO_DEFAULTS.iconMirrorH,
+		iconMirrorV = APP_LOGO_DEFAULTS.iconMirrorV,
 		grayscaleLightness = 100,
 		cornerRadius = APP_LOGO_DEFAULTS.cornerRadius,
 		cornerShape = APP_LOGO_DEFAULTS.cornerShape,
@@ -92,7 +94,7 @@
 		return `path('${pathD}')`;
 	});
 
-	// Icon wrapper transform for offset and rotation
+	// Icon wrapper transform for offset, rotation, and mirror
 	let iconTransform = $derived.by(() => {
 		const parts: string[] = [];
 		if (iconOffsetX || iconOffsetY) {
@@ -100,6 +102,9 @@
 		}
 		if (iconRotation) {
 			parts.push(`rotate(${iconRotation}deg)`);
+		}
+		if (iconMirrorH || iconMirrorV) {
+			parts.push(`scale(${iconMirrorH ? -1 : 1}, ${iconMirrorV ? -1 : 1})`);
 		}
 		return parts.length > 0 ? parts.join(' ') : undefined;
 	});

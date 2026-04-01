@@ -38,6 +38,8 @@ export interface AppLogoProps {
 	iconOffsetX?: number; // % horizontal offset from center, default: 0
 	iconOffsetY?: number; // % vertical offset from center, default: 0
 	iconRotation?: number; // degrees clockwise, default: 0 (Phase 2)
+	iconMirrorH?: boolean; // flip icon horizontally, default: false
+	iconMirrorV?: boolean; // flip icon vertically, default: false
 	grayscaleLightness?: number; // lightness multiplier for grayscale modes, default: 100 (%)
 
 	// --- Square ---

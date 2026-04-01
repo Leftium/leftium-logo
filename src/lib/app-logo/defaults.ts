@@ -37,6 +37,8 @@ export const APP_LOGO_DEFAULTS: Required<
 		| 'iconOffsetX'
 		| 'iconOffsetY'
 		| 'iconRotation'
+		| 'iconMirrorH'
+		| 'iconMirrorV'
 		| 'cornerRadius'
 		| 'cornerShape'
 		| 'size'
@@ -45,10 +47,12 @@ export const APP_LOGO_DEFAULTS: Required<
 	icon: 'fxemoji:rocket',
 	iconColor: '#ffffff',
 	iconColorMode: 'auto',
-	iconSize: 60,
+	iconSize: 80,
 	iconOffsetX: 0,
 	iconOffsetY: 0,
 	iconRotation: 0,
+	iconMirrorH: false,
+	iconMirrorV: false,
 	cornerRadius: 0,
 	cornerShape: 'round',
 	background: LEFTIUM_GRADIENT,

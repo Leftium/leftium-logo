@@ -18,6 +18,8 @@ function resolveProps(config: AppLogoConfig, variant?: 'logo' | 'favicon'): Requ
 		iconOffsetX: overrides?.iconOffsetX ?? APP_LOGO_DEFAULTS.iconOffsetX,
 		iconOffsetY: overrides?.iconOffsetY ?? APP_LOGO_DEFAULTS.iconOffsetY,
 		iconRotation: overrides?.iconRotation ?? APP_LOGO_DEFAULTS.iconRotation,
+		iconMirrorH: overrides?.iconMirrorH ?? APP_LOGO_DEFAULTS.iconMirrorH,
+		iconMirrorV: overrides?.iconMirrorV ?? APP_LOGO_DEFAULTS.iconMirrorV,
 		grayscaleLightness: overrides?.grayscaleLightness ?? 100,
 		cornerRadius: overrides?.cornerRadius ?? config.cornerRadius ?? APP_LOGO_DEFAULTS.cornerRadius,
 		cornerShape: overrides?.cornerShape ?? config.cornerShape ?? APP_LOGO_DEFAULTS.cornerShape,
@@ -144,7 +146,9 @@ function buildIconLayer(
 	iconSize: number,
 	iconOffsetX: number,
 	iconOffsetY: number,
-	iconRotation: number
+	iconRotation: number,
+	iconMirrorH: boolean = false,
+	iconMirrorV: boolean = false
 ): string {
 	// Parse viewBox
 	const [vbX, vbY, vbW, vbH] = viewBox.split(' ').map(Number);
@@ -171,7 +175,17 @@ function buildIconLayer(
 			? ` rotate(${iconRotation}, ${(renderedW / 2).toFixed(2)}, ${(renderedH / 2).toFixed(2)})`
 			: '';
 
-	return `<g transform="translate(${tx.toFixed(2)}, ${ty.toFixed(2)})${rotateAttr} scale(${scale.toFixed(4)}) translate(${-vbX}, ${-vbY})">
+	// Mirror (flip) around the icon's center
+	let mirrorAttr = '';
+	if (iconMirrorH || iconMirrorV) {
+		const sx = iconMirrorH ? -1 : 1;
+		const sy = iconMirrorV ? -1 : 1;
+		const cx = renderedW / 2;
+		const cy = renderedH / 2;
+		mirrorAttr = ` translate(${cx.toFixed(2)}, ${cy.toFixed(2)}) scale(${sx}, ${sy}) translate(${(-cx).toFixed(2)}, ${(-cy).toFixed(2)})`;
+	}
+
+	return `<g transform="translate(${tx.toFixed(2)}, ${ty.toFixed(2)})${rotateAttr}${mirrorAttr} scale(${scale.toFixed(4)}) translate(${-vbX}, ${-vbY})">
     ${svgContent}
   </g>`;
 }
@@ -223,7 +237,9 @@ export async function generateAppLogoSvg(
 		props.iconSize,
 		props.iconOffsetX,
 		props.iconOffsetY,
-		props.iconRotation
+		props.iconRotation,
+		props.iconMirrorH,
+		props.iconMirrorV
 	);
 
 	// Combine all defs (gradient + clip path)
