@@ -114,6 +114,24 @@
 			});
 		}
 	});
+	// ─── Manifest color derivation from background ────────────────────────────
+
+	// Manifest colors default to the logo's primary background color.
+	// Once manually edited, auto-sync stops (same pattern as app name).
+	let themeColor = $state(logo.solidColor);
+	let backgroundColor = $state(logo.solidColor);
+	let themeColorManuallyEdited = $state(false);
+	let bgColorManuallyEdited = $state(false);
+
+	// Auto-sync manifest colors from background settings.
+	// Uses solidColor as the representative color — it's the solid background
+	// color when gradients are off, or the primary gradient stop color.
+	$effect(() => {
+		const color = logo.solidColor;
+		if (!themeColorManuallyEdited) themeColor = color;
+		if (!bgColorManuallyEdited) backgroundColor = color;
+	});
+
 	let copying = $state<'logo' | 'favicon' | null>(null);
 	let downloading = $state(false);
 	let showGuidelines = $state(true);
@@ -276,7 +294,7 @@
 	async function copyHtmlSnippet() {
 		snippetCopied = 'html';
 		try {
-			const html = generateHtmlSnippet({ name: appName, shortName: appShortName });
+			const html = generateHtmlSnippet(appInfo);
 			await navigator.clipboard.writeText(html);
 		} finally {
 			setTimeout(() => {
@@ -302,7 +320,7 @@
 	async function downloadAll() {
 		downloading = true;
 		try {
-			const zip = await generateZipKit(fullConfig, { name: appName, shortName: appShortName });
+			const zip = await generateZipKit(fullConfig, appInfo);
 			downloadBlob(zip, zipFilename);
 		} finally {
 			downloading = false;
@@ -388,6 +406,15 @@
 		favicon.iconColorModeKey === 'grayscale' || favicon.iconColorModeKey === 'grayscale-tint'
 	);
 
+	// ─── Derived: AppInfo (shared by manifest, snippets, zip) ──────────────
+
+	let appInfo = $derived({
+		name: appName,
+		shortName: appShortName,
+		themeColor,
+		backgroundColor
+	});
+
 	// ─── Derived: Zip filename slug ─────────────────────────────────────────
 
 	let zipSlug = $derived(
@@ -400,9 +427,7 @@
 
 	// ─── Snippet preview for tooltips ────────────────────────────────────────
 
-	let htmlSnippetPreview = $derived(
-		generateHtmlSnippet({ name: appName, shortName: appShortName })
-	);
+	let htmlSnippetPreview = $derived(generateHtmlSnippet(appInfo));
 	let svelteSnippetPreview = $derived(generateSvelteSnippet(fullConfig));
 
 	// ─── Config import/export ─────────────────────────────────────────────────
@@ -1982,54 +2007,95 @@
 		</div>
 	</details>
 
-	<!-- ── Download All + Copy Snippets ───────────────────────────────── -->
-	<div class="download-all">
-		<div class="app-name-row">
-			<label class="app-name-field">
-				<span>App name</span>
-				<input type="text" bind:value={appName} oninput={() => (nameManuallyEdited = true)} />
-			</label>
-			<label class="app-name-field">
-				<span>Short name</span>
-				<input
-					type="text"
-					bind:value={appShortName}
-					oninput={() => (shortNameManuallyEdited = true)}
-				/>
-			</label>
+	<!-- ── App Info + Download ────────────────────────────────────────── -->
+	<fieldset class="app-info-group">
+		<legend>Logo Kit</legend>
+
+		<div class="app-info-body">
+			<div class="app-name-row">
+				<label class="app-name-field">
+					<span>App name</span>
+					<input type="text" bind:value={appName} oninput={() => (nameManuallyEdited = true)} />
+				</label>
+				<label class="app-name-field">
+					<span>Short name</span>
+					<input
+						type="text"
+						bind:value={appShortName}
+						oninput={() => (shortNameManuallyEdited = true)}
+					/>
+				</label>
+			</div>
+			<div class="manifest-color-row">
+				<label class="manifest-color-field">
+					<span>Theme color</span>
+					<span class="color-input-pair">
+						<input
+							type="color"
+							bind:value={themeColor}
+							oninput={() => (themeColorManuallyEdited = true)}
+						/>
+						<input
+							type="text"
+							bind:value={themeColor}
+							oninput={() => (themeColorManuallyEdited = true)}
+							class="color-hex"
+						/>
+					</span>
+				</label>
+				<label class="manifest-color-field">
+					<span>Background color</span>
+					<span class="color-input-pair">
+						<input
+							type="color"
+							bind:value={backgroundColor}
+							oninput={() => (bgColorManuallyEdited = true)}
+						/>
+						<input
+							type="text"
+							bind:value={backgroundColor}
+							oninput={() => (bgColorManuallyEdited = true)}
+							class="color-hex"
+						/>
+					</span>
+				</label>
+			</div>
 		</div>
-		<button onclick={downloadAll} disabled={downloading} class="download-all-btn">
-			{downloading ? 'Generating…' : `Download All (${zipFilename})`}
-		</button>
-		<div class="snippet-buttons">
-			<button
-				onclick={copyHtmlSnippet}
-				class="snippet-btn"
-				class:active={snippetCopied === 'html'}
-				use:tooltip={{
-					content: htmlSnippetPreview,
-					placement: 'top',
-					maxWidth: 480,
-					allowHTML: false
-				}}
-			>
-				{snippetCopied === 'html' ? 'Copied!' : 'Copy HTML'}
+
+		<footer class="app-info-footer">
+			<button onclick={downloadAll} disabled={downloading} class="download-all-btn">
+				{downloading ? 'Generating…' : `Download All (${zipFilename})`}
 			</button>
-			<button
-				onclick={copySvelteSnippet}
-				class="snippet-btn"
-				class:active={snippetCopied === 'svelte'}
-				use:tooltip={{
-					content: svelteSnippetPreview,
-					placement: 'top',
-					maxWidth: 480,
-					allowHTML: false
-				}}
-			>
-				{snippetCopied === 'svelte' ? 'Copied!' : 'Copy Svelte'}
-			</button>
-		</div>
-	</div>
+			<div class="snippet-buttons">
+				<button
+					onclick={copyHtmlSnippet}
+					class="snippet-btn"
+					class:active={snippetCopied === 'html'}
+					use:tooltip={{
+						content: htmlSnippetPreview,
+						placement: 'top',
+						maxWidth: 480,
+						allowHTML: false
+					}}
+				>
+					{snippetCopied === 'html' ? 'Copied!' : 'Copy HTML'}
+				</button>
+				<button
+					onclick={copySvelteSnippet}
+					class="snippet-btn"
+					class:active={snippetCopied === 'svelte'}
+					use:tooltip={{
+						content: svelteSnippetPreview,
+						placement: 'top',
+						maxWidth: 480,
+						allowHTML: false
+					}}
+				>
+					{snippetCopied === 'svelte' ? 'Copied!' : 'Copy Svelte'}
+				</button>
+			</div>
+		</footer>
+	</fieldset>
 </main>
 
 <style>
@@ -2877,12 +2943,76 @@
 		text-align: center;
 	}
 
-	.download-all {
+	.app-info-group {
+		border: 1px solid #ddd;
+		border-radius: 8px;
+		padding: 0.75rem 1rem 1rem;
+		margin: 0.5rem 0 1rem;
+	}
+
+	.app-info-group legend {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: #333;
+		padding: 0 0.4rem;
+	}
+
+	.app-info-body {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 0.75rem;
-		padding: 0.5rem 0 1rem;
+	}
+
+	.manifest-color-row {
+		display: flex;
+		gap: 1rem;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	.manifest-color-field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		font-size: 0.82rem;
+		font-weight: 500;
+		color: #555;
+	}
+
+	.color-input-pair {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+	}
+
+	.color-input-pair input[type='color'] {
+		width: 28px;
+		height: 28px;
+		padding: 0;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		cursor: pointer;
+		background: none;
+	}
+
+	.color-hex {
+		padding: 0.3rem 0.5rem;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		font-size: 0.85rem;
+		font-family: monospace;
+		width: 7em;
+	}
+
+	.app-info-footer {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
+		padding-top: 0.75rem;
+		margin-top: 0.75rem;
+		border-top: 1px solid #eee;
 	}
 
 	.snippet-buttons {

@@ -6,7 +6,7 @@
  */
 
 import { LEFTIUM_GRADIENT, APP_LOGO_DEFAULTS, DEFAULT_EMOJI_STYLE } from './defaults.js';
-import { generateFaviconHtml } from './generate-favicon-set.js';
+import { generateFaviconHtml, type AppInfo } from './generate-favicon-set.js';
 import type {
 	AppLogoConfig,
 	AppLogoProps,
@@ -629,6 +629,6 @@ export function generateSvelteSnippet(config: AppLogoConfig): string {
  * Generate the HTML favicon snippet for clipboard copy.
  * Re-exports the existing function for convenience.
  */
-export function generateHtmlSnippet(appInfo: { name?: string; shortName?: string }): string {
+export function generateHtmlSnippet(appInfo: AppInfo): string {
 	return generateFaviconHtml(appInfo);
 }

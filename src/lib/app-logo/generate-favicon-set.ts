@@ -15,6 +15,8 @@ export interface FaviconSetResult {
 export interface AppInfo {
 	name?: string; // full app name, e.g. "My App"
 	shortName?: string; // short name for home screen, e.g. "App"
+	themeColor?: string; // manifest theme_color (browser chrome / status bar)
+	backgroundColor?: string; // manifest background_color (PWA splash screen)
 }
 
 /**
@@ -61,8 +63,8 @@ export function generateManifest(appInfo: AppInfo): string {
 			{ src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
 			{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' }
 		],
-		theme_color: '#ffffff',
-		background_color: '#ffffff',
+		theme_color: appInfo.themeColor || '#ffffff',
+		background_color: appInfo.backgroundColor || '#ffffff',
 		display: 'standalone'
 	};
 	return JSON.stringify(manifest, null, '\t');
@@ -73,8 +75,10 @@ export function generateManifest(appInfo: AppInfo): string {
  */
 export function generateFaviconHtml(appInfo: AppInfo): string {
 	const name = appInfo.name || 'My App';
+	const themeColor = appInfo.themeColor || '#ffffff';
 	return [
 		`\t\t<title>${name}</title>`,
+		`\t\t<meta name="theme-color" content="${themeColor}">`,
 		`\t\t<link rel="icon" href="/favicon.ico" sizes="32x32">`,
 		`\t\t<link rel="icon" href="/icon.svg" type="image/svg+xml">`,
 		`\t\t<link rel="apple-touch-icon" href="/apple-touch-icon.png">`,
