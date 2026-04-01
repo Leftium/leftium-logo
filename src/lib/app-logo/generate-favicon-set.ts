@@ -83,8 +83,8 @@ export function generateFaviconHtml(appInfo: AppInfo): string {
  *   static/logo.webp
  *   static/logo.svg
  *   static/manifest.webmanifest
- *   static/_app-logo/config.json
- *   _snippets/favicon-html.html
+ *   .logo/config.json
+ *   .logo/favicon.htm
  */
 export async function generateZipKit(config: AppLogoConfig, appInfo: AppInfo): Promise<Blob> {
 	const [faviconSet, logoPng, logoWebp, logoSvg] = await Promise.all([
@@ -96,8 +96,7 @@ export async function generateZipKit(config: AppLogoConfig, appInfo: AppInfo): P
 
 	const zip = new JSZip();
 	const staticDir = zip.folder('static')!;
-	const appLogoDir = staticDir.folder('_app-logo')!;
-	const snippetsDir = zip.folder('_snippets')!;
+	const logoDir = zip.folder('.logo')!;
 
 	// Favicon files
 	staticDir.file('favicon.ico', faviconSet.ico);
@@ -115,10 +114,10 @@ export async function generateZipKit(config: AppLogoConfig, appInfo: AppInfo): P
 	staticDir.file('manifest.webmanifest', generateManifest(appInfo));
 
 	// Config for regeneration
-	appLogoDir.file('config.json', JSON.stringify(config, null, '\t'));
+	logoDir.file('config.json', JSON.stringify(config, null, '\t'));
 
 	// HTML snippet
-	snippetsDir.file('favicon-html.html', generateFaviconHtml(appInfo));
+	logoDir.file('favicon.htm', generateFaviconHtml(appInfo));
 
 	return zip.generateAsync({ type: 'blob' });
 }
