@@ -189,6 +189,76 @@ export async function resolveEmojiSlug(emoji: string, prefix: string): Promise<s
 	}
 }
 
+// ─── Emoji → human-readable name resolution ────────────────────────────
+
+/** Cached emoji name resolution keyed by emoji character */
+const emojiNameCache = new Map<string, string | null>();
+
+/**
+ * Resolve an emoji character to a human-readable name using the Iconify API.
+ *
+ * Queries the Iconify JSON API with the emoji's codepoint. If the codepoint
+ * is an alias, the parent name is the canonical human-readable name (e.g.
+ * "rocket", "fire", "wrapped-gift"). If it's a direct icon entry, the icon
+ * key itself is used.
+ *
+ * Falls back to `null` if the name can't be resolved.
+ *
+ * @param emoji - The emoji character (e.g. "🚀")
+ * @param prefix - Iconify emoji set prefix (default: "twemoji")
+ */
+export async function resolveEmojiName(
+	emoji: string,
+	prefix: string = 'twemoji'
+): Promise<string | null> {
+	const cached = emojiNameCache.get(emoji);
+	if (cached !== undefined) return cached;
+
+	try {
+		const codepoints = emojiToCodepoints(emoji);
+		if (!codepoints) {
+			emojiNameCache.set(emoji, null);
+			return null;
+		}
+
+		// Query the Iconify JSON API for this codepoint
+		const url = `https://api.iconify.design/${prefix}.json?icons=${codepoints}`;
+		const response = await fetch(url);
+
+		if (response.ok) {
+			const data = await response.json();
+
+			// Check aliases first: codepoint → parent (human-readable name)
+			if (data.aliases?.[codepoints]?.parent) {
+				const name = data.aliases[codepoints].parent;
+				emojiNameCache.set(emoji, name);
+				return name;
+			}
+
+			// If the codepoint itself is a direct icon entry, use it
+			// (some sets might use the codepoint as the canonical name)
+			if (data.icons?.[codepoints]) {
+				emojiNameCache.set(emoji, codepoints);
+				return codepoints;
+			}
+
+			// Check if there are any icons at all (API might have resolved differently)
+			const iconKeys = Object.keys(data.icons || {});
+			if (iconKeys.length > 0) {
+				const name = iconKeys[0];
+				emojiNameCache.set(emoji, name);
+				return name;
+			}
+		}
+
+		emojiNameCache.set(emoji, null);
+		return null;
+	} catch {
+		// Network error — don't cache
+		return null;
+	}
+}
+
 // ─── Main resolution ────────────────────────────────────────────────────
 
 /**

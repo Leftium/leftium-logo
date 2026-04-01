@@ -24,6 +24,45 @@
 		configToUIState
 	} from '$lib/app-logo/config-serialization.js';
 	import { DEFAULT_EMOJI_STYLE, EMOJI_SETS, detectIconSource } from '$lib/app-logo/defaults.js';
+	import { resolveEmojiName } from '$lib/app-logo/iconify.js';
+
+	// ─── Name derivation from icon ──────────────────────────────────────────
+
+	/** Title-case a slug: replace hyphens/underscores with spaces, capitalize words */
+	function titleCase(slug: string): string {
+		return slug
+			.replace(/[-_]/g, ' ')
+			.replace(/\b\w/g, (c) => c.toUpperCase())
+			.trim();
+	}
+
+	/**
+	 * Derive a human-readable app name from the icon string (synchronous).
+	 * - Iconify ID (e.g. "fxemoji:rocket") → "Rocket"
+	 * - Emoji character → "My App" (placeholder; async resolution upgrades this)
+	 * - Inline SVG → "My App" (generic)
+	 * - Plain text → the text itself
+	 */
+	function deriveNameFromIcon(icon: string): { name: string; shortName: string } {
+		const source = detectIconSource(icon);
+		switch (source) {
+			case 'iconify': {
+				// Extract part after the last colon, e.g. "fxemoji:rocket" → "rocket"
+				const parts = icon.split(':');
+				const raw = parts[parts.length - 1] || 'App';
+				const name = titleCase(raw);
+				return { name, shortName: name };
+			}
+			case 'emoji':
+				// Placeholder — async resolveEmojiName() will upgrade this
+				return { name: 'My App', shortName: 'App' };
+			case 'svg':
+			case 'data-url':
+				return { name: 'My App', shortName: 'App' };
+			default:
+				return { name: icon.trim() || 'My App', shortName: icon.trim() || 'App' };
+		}
+	}
 
 	// ─── Lock icons (icomoon-free, inlined to avoid async fetch) ─────────────
 
@@ -42,9 +81,39 @@
 
 	// ─── Additional State ─────────────────────────────────────────────────────
 
-	let appName = $state('My App');
-	let appShortName = $state('App');
+	// Auto-derive initial names from the default icon
+	const initialNames = deriveNameFromIcon(DEFAULT_STATE.icon);
+	let appName = $state(initialNames.name);
+	let appShortName = $state(initialNames.shortName);
+	// Track whether the user has manually edited the name fields.
+	// Once manually edited, we stop auto-syncing from the icon.
+	let nameManuallyEdited = $state(false);
+	let shortNameManuallyEdited = $state(false);
+
 	let emojiStyle = $state(DEFAULT_EMOJI_STYLE);
+
+	// Auto-sync names from logo icon when not manually edited.
+	// First applies the synchronous derivation (instant), then for emoji icons
+	// fires an async lookup to resolve the human-readable emoji name.
+	$effect(() => {
+		const icon = logo.icon;
+		const style = emojiStyle;
+		const derived = deriveNameFromIcon(icon);
+
+		if (!nameManuallyEdited) appName = derived.name;
+		if (!shortNameManuallyEdited) appShortName = derived.shortName;
+
+		// For emoji icons, asynchronously resolve the human-readable name
+		if (detectIconSource(icon) === 'emoji' && style !== 'native') {
+			resolveEmojiName(icon, style).then((slug) => {
+				if (slug && logo.icon === icon) {
+					const name = titleCase(slug);
+					if (!nameManuallyEdited) appName = name;
+					if (!shortNameManuallyEdited) appShortName = name;
+				}
+			});
+		}
+	});
 	let copying = $state<'logo' | 'favicon' | null>(null);
 	let downloading = $state(false);
 	let showGuidelines = $state(true);
@@ -234,7 +303,7 @@
 		downloading = true;
 		try {
 			const zip = await generateZipKit(fullConfig, { name: appName, shortName: appShortName });
-			downloadBlob(zip, 'app-logo-kit.zip');
+			downloadBlob(zip, zipFilename);
 		} finally {
 			downloading = false;
 		}
@@ -318,6 +387,16 @@
 	let favIsGrayscaleMode = $derived(
 		favicon.iconColorModeKey === 'grayscale' || favicon.iconColorModeKey === 'grayscale-tint'
 	);
+
+	// ─── Derived: Zip filename slug ─────────────────────────────────────────
+
+	let zipSlug = $derived(
+		(appShortName || appName || 'app')
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, '-')
+			.replace(/^-+|-+$/g, '') || 'app'
+	);
+	let zipFilename = $derived(`${zipSlug}-logo-kit.zip`);
 
 	// ─── Snippet preview for tooltips ────────────────────────────────────────
 
@@ -1876,21 +1955,6 @@
 		</article>
 	</div>
 
-	<!-- ── App info ─────────────────────────────────────────────────────── -->
-	<details class="app-info">
-		<summary>App info (for manifest &amp; HTML snippet)</summary>
-		<div class="app-info-fields">
-			<label>
-				App name
-				<input type="text" bind:value={appName} />
-			</label>
-			<label>
-				Short name
-				<input type="text" bind:value={appShortName} />
-			</label>
-		</div>
-	</details>
-
 	<!-- ── Config ───────────────────────────────────────────────────────── -->
 	<details class="config-section">
 		<summary>Config (import/export &amp; shareable link)</summary>
@@ -1920,8 +1984,22 @@
 
 	<!-- ── Download All + Copy Snippets ───────────────────────────────── -->
 	<div class="download-all">
+		<div class="app-name-row">
+			<label class="app-name-field">
+				<span>App name</span>
+				<input type="text" bind:value={appName} oninput={() => (nameManuallyEdited = true)} />
+			</label>
+			<label class="app-name-field">
+				<span>Short name</span>
+				<input
+					type="text"
+					bind:value={appShortName}
+					oninput={() => (shortNameManuallyEdited = true)}
+				/>
+			</label>
+		</div>
 		<button onclick={downloadAll} disabled={downloading} class="download-all-btn">
-			{downloading ? 'Generating…' : 'Download All (zip kit)'}
+			{downloading ? 'Generating…' : `Download All (${zipFilename})`}
 		</button>
 		<div class="snippet-buttons">
 			<button
@@ -2720,46 +2798,6 @@
 		background: #e0e0e0;
 	}
 
-	/* ── App info ──────────────────────────────────────────────────────── */
-
-	.app-info {
-		border: 1px solid #ddd;
-		border-radius: 6px;
-		padding: 0.75rem 1rem;
-		margin-bottom: 1rem;
-	}
-
-	.app-info summary {
-		cursor: pointer;
-		font-size: 0.9rem;
-		font-weight: 500;
-		color: #444;
-		user-select: none;
-	}
-
-	.app-info-fields {
-		display: flex;
-		gap: 1.5rem;
-		margin-top: 0.75rem;
-		flex-wrap: wrap;
-	}
-
-	.app-info-fields label {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-		font-size: 0.85rem;
-		font-weight: 500;
-	}
-
-	.app-info-fields input {
-		padding: 0.3rem 0.5rem;
-		border: 1px solid #ccc;
-		border-radius: 4px;
-		font-size: 0.9rem;
-		min-width: 180px;
-	}
-
 	/* ── Config section ───────────────────────────────────────────────── */
 
 	.config-section {
@@ -2813,6 +2851,31 @@
 	}
 
 	/* ── Download All + Snippet Buttons ───────────────────────────────── */
+
+	.app-name-row {
+		display: flex;
+		gap: 1rem;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	.app-name-field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		font-size: 0.82rem;
+		font-weight: 500;
+		color: #555;
+	}
+
+	.app-name-field input {
+		padding: 0.3rem 0.5rem;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		font-size: 0.85rem;
+		min-width: 150px;
+		text-align: center;
+	}
 
 	.download-all {
 		display: flex;
