@@ -23,7 +23,7 @@ export interface FaviconConfig {
 	size?: number;
 	/** Use squircle shape. Default: false (square) */
 	squircle?: boolean;
-	/** Ligature scale (1 = default fit). Default: 0.7 */
+	/** Ligature scale (1 = default fit). Default: 1 */
 	ligatureScale?: number;
 	/** Ligature horizontal offset as fraction of container. Default: 0 */
 	ligatureOffsetX?: number;
@@ -40,7 +40,7 @@ export function generateFaviconSvg(config: FaviconConfig = {}): string {
 	const {
 		size = 128,
 		squircle = false,
-		ligatureScale = 0.7,
+		ligatureScale = 1,
 		ligatureOffsetX = 0,
 		ligatureOffsetY = 0
 	} = config;

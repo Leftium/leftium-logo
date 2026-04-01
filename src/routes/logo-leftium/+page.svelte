@@ -30,9 +30,9 @@
 	// ─── Favicon State ────────────────────────────────────────────────────────
 
 	let faviconSquircle = $state(false);
-	let faviconScale = $state(0.7);
+	let faviconScale = $state(0.99);
 	let faviconOffsetX = $state(0);
-	let faviconOffsetY = $state(0);
+	let faviconOffsetY = $state(0.005);
 	let faviconSize = $state(128);
 	let faviconCopying = $state<string | null>(null);
 	let faviconDownloading = $state<string | null>(null);
@@ -432,63 +432,6 @@
 							</td>
 						</tr>
 
-						<!-- Scale -->
-						<tr>
-							<th>Scale</th>
-							<td>
-								<div class="slider-row">
-									<input
-										type="range"
-										min="0.3"
-										max="1.2"
-										step="0.01"
-										bind:value={faviconScale}
-										class="slider"
-									/>
-									<span class="slider-value">{faviconScale.toFixed(2)}</span>
-									<button class="reset-btn" onclick={() => (faviconScale = 0.7)}>×</button>
-								</div>
-							</td>
-						</tr>
-
-						<!-- Offset X -->
-						<tr>
-							<th>Offset X</th>
-							<td>
-								<div class="slider-row">
-									<input
-										type="range"
-										min="-0.3"
-										max="0.3"
-										step="0.01"
-										bind:value={faviconOffsetX}
-										class="slider"
-									/>
-									<span class="slider-value">{faviconOffsetX.toFixed(2)}</span>
-									<button class="reset-btn" onclick={() => (faviconOffsetX = 0)}>×</button>
-								</div>
-							</td>
-						</tr>
-
-						<!-- Offset Y -->
-						<tr>
-							<th>Offset Y</th>
-							<td>
-								<div class="slider-row">
-									<input
-										type="range"
-										min="-0.3"
-										max="0.3"
-										step="0.01"
-										bind:value={faviconOffsetY}
-										class="slider"
-									/>
-									<span class="slider-value">{faviconOffsetY.toFixed(2)}</span>
-									<button class="reset-btn" onclick={() => (faviconOffsetY = 0)}>×</button>
-								</div>
-							</td>
-						</tr>
-
 						<!-- Size (export) -->
 						<tr>
 							<th>Size</th>
@@ -707,44 +650,6 @@
 		margin-right: 1rem;
 		font-size: 0.9rem;
 		cursor: pointer;
-	}
-
-	/* ── Slider row ──────────────────────────────────────────────────── */
-
-	.slider-row {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.slider {
-		flex: 1;
-		min-width: 80px;
-	}
-
-	.slider-value {
-		font-size: 0.85rem;
-		font-family: monospace;
-		color: #333;
-		min-width: 3.5em;
-		text-align: right;
-	}
-
-	.reset-btn {
-		padding: 0.1rem 0.45rem;
-		font-size: 0.85rem;
-		border: 1px solid #ccc;
-		border-radius: 4px;
-		background: #f5f5f5;
-		color: #888;
-		cursor: pointer;
-		line-height: 1;
-	}
-
-	.reset-btn:hover {
-		background: #e0e0e0;
-		color: #333;
-		border-color: #999;
 	}
 
 	/* ── Size row ─────────────────────────────────────────────────────── */
