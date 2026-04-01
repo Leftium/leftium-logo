@@ -33,6 +33,12 @@ export async function generateLeftiumZipKit(
 	faviconConfig: FaviconConfig,
 	appInfo: AppInfo = { name: 'Leftium', shortName: 'Leftium' }
 ): Promise<Blob> {
+	// Home-screen icons (apple-touch-icon, PWA 192/512) are generated as
+	// full-bleed squares so the OS can apply its own platform-specific mask
+	// (iOS squircle, Android circle, etc.) without clashing with a baked-in shape.
+	// Browser-tab assets (icon.svg, favicon.ico) keep the caller's config.
+	const fullBleedFaviconConfig: FaviconConfig = { ...faviconConfig, squircle: false };
+
 	// Generate favicon PNGs at all required sizes in parallel with logo assets
 	const [logoPng, logoWebp, logoSvg, faviconPng32, faviconAppleTouch, favicon192, favicon512] =
 		await Promise.all([
@@ -40,9 +46,9 @@ export async function generateLeftiumZipKit(
 			generateLeftiumLogoPng({ ...logoConfig, size: 512 }, 'webp'),
 			generateLeftiumLogoSvg(logoConfig),
 			generateFaviconPng({ ...faviconConfig, size: 32 }, 'png'),
-			generateFaviconPng({ ...faviconConfig, size: 180 }, 'png'),
-			generateFaviconPng({ ...faviconConfig, size: 192 }, 'png'),
-			generateFaviconPng({ ...faviconConfig, size: 512 }, 'png')
+			generateFaviconPng({ ...fullBleedFaviconConfig, size: 180 }, 'png'),
+			generateFaviconPng({ ...fullBleedFaviconConfig, size: 192 }, 'png'),
+			generateFaviconPng({ ...fullBleedFaviconConfig, size: 512 }, 'png')
 		]);
 
 	const faviconIco = await pngToIco(faviconPng32);

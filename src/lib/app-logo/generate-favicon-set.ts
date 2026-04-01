@@ -22,14 +22,26 @@ export interface AppInfo {
  *
  * Returns SVG, ICO, and PNG blobs for all standard favicon sizes.
  * Browser-only (requires canvas).
+ *
+ * Home-screen icons (apple-touch-icon, PWA 192/512) are generated as
+ * full-bleed squares (cornerRadius: 0) so the OS can apply its own
+ * platform-specific mask (iOS squircle, Android circle, etc.) without
+ * clashing with a baked-in shape. Browser-tab assets (icon.svg,
+ * favicon.ico) keep the user's configured corner shape.
  */
 export async function generateFaviconSet(config: AppLogoConfig): Promise<FaviconSetResult> {
+	// Force full-bleed square for icons that the OS will mask
+	const fullBleedConfig: AppLogoConfig = {
+		...config,
+		favicon: { ...config.favicon, cornerRadius: 0, cornerShape: 'square' }
+	};
+
 	const [svg, png32, appleTouchIcon, icon192, icon512] = await Promise.all([
 		generateAppLogoSvg(config, 'favicon'),
 		generateAppLogoPng(config, { variant: 'favicon', size: 32 }),
-		generateAppLogoPng(config, { variant: 'favicon', size: 180 }),
-		generateAppLogoPng(config, { variant: 'favicon', size: 192 }),
-		generateAppLogoPng(config, { variant: 'favicon', size: 512 })
+		generateAppLogoPng(fullBleedConfig, { variant: 'favicon', size: 180 }),
+		generateAppLogoPng(fullBleedConfig, { variant: 'favicon', size: 192 }),
+		generateAppLogoPng(fullBleedConfig, { variant: 'favicon', size: 512 })
 	]);
 
 	const ico = await pngToIco(png32);
