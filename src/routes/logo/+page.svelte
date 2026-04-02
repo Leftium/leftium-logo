@@ -596,12 +596,28 @@
 						{/if}
 					</div>
 				</div>
+				<div class="guidelines-control guidelines-control-logo">
+					<label class="guidelines-toggle" title="Show design guidelines overlay">
+						<input type="checkbox" bind:checked={showGuidelines} />
+						<span class="guidelines-label">Guidelines</span>
+					</label>
+					<input
+						type="range"
+						min="0"
+						max="25"
+						step="0.5"
+						bind:value={guidelineInsetPct}
+						class="guidelines-slider"
+						disabled={!showGuidelines}
+						title="Guide inset: {guidelineInsetPct.toFixed(1)}%"
+					/>
+				</div>
 				<h2>Logo</h2>
 			</div>
 
 			<div class="preview-gap"></div>
 
-			<div class="preview-panel">
+			<div class="preview-panel favicon-panel">
 				<div class="checkerboard favicon-preview">
 					<div class="favicon-size">
 						<AppLogo
@@ -665,22 +681,21 @@
 					</div>
 				</div>
 				<div class="preview-spacer"></div>
-				<div class="guidelines-control">
+				<div class="guidelines-control guidelines-control-favicon">
 					<label class="guidelines-toggle" title="Show design guidelines overlay">
 						<input type="checkbox" bind:checked={showGuidelines} />
 						<span class="guidelines-label">Guidelines</span>
 					</label>
-					{#if showGuidelines}
-						<input
-							type="range"
-							min="0"
-							max="25"
-							step="0.5"
-							bind:value={guidelineInsetPct}
-							class="guidelines-slider"
-							title="Guide inset: {guidelineInsetPct.toFixed(1)}%"
-						/>
-					{/if}
+					<input
+						type="range"
+						min="0"
+						max="25"
+						step="0.5"
+						bind:value={guidelineInsetPct}
+						class="guidelines-slider"
+						disabled={!showGuidelines}
+						title="Guide inset: {guidelineInsetPct.toFixed(1)}%"
+					/>
 				</div>
 				<h2>Favicon</h2>
 			</div>
@@ -698,7 +713,7 @@
 			<button onclick={downloadLogoWebp}>WebP</button>
 		</div>
 		<div class="preview-actions-gap"></div>
-		<div class="preview-actions">
+		<div class="preview-actions favicon-actions">
 			<button onclick={copyFaviconPng} class:active={copying === 'favicon'}>
 				{copying === 'favicon' ? 'Copied!' : 'Copy PNG'}
 			</button>
@@ -2101,6 +2116,7 @@
 <style>
 	:global(body) {
 		overflow-y: auto !important;
+		padding-top: 0 !important;
 	}
 
 	/* Tippy tooltip content: monospace for code snippets */
@@ -2115,7 +2131,7 @@
 	main {
 		max-width: 960px;
 		margin: 0 auto;
-		padding: 1rem 1rem 3rem;
+		padding: 0 1rem 3rem;
 	}
 
 	/* h2 acts as column label below the preview buttons */
@@ -2137,10 +2153,8 @@
 		z-index: 10;
 		background: var(--nc-bg-primary, #fff);
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-		padding: 1rem 0 0.5rem;
-		margin: -1rem -1rem 0;
-		padding-left: 1rem;
-		padding-right: 1rem;
+		padding: 0.5rem 1rem;
+		margin: 0 -1rem;
 	}
 
 	.preview-row {
@@ -2248,6 +2262,11 @@
 		align-self: flex-start;
 	}
 
+	/* On desktop: show only the favicon-panel copy of guidelines */
+	.guidelines-control-logo {
+		display: none;
+	}
+
 	.guidelines-toggle {
 		display: flex;
 		align-items: center;
@@ -2269,6 +2288,10 @@
 	.guidelines-slider {
 		width: 80px;
 		margin: 0;
+	}
+
+	.guidelines-slider:disabled {
+		opacity: 0.35;
 	}
 
 	.favicon-preview {
@@ -3065,12 +3088,16 @@
 		cursor: not-allowed;
 	}
 
-	/* ── Responsive ────────────────────────────────────────────────────── */
+	/* ── Responsive: tablet-ish (narrow but not phone) ────────────────── */
 
-	@media (max-width: 600px) {
+	@media (max-width: 700px) {
 		.ctrl-row {
-			grid-template-columns: 64px 40px 1fr 18px 28px 1fr 40px 64px;
+			grid-template-columns: 70px 46px 1fr 24px 30px 1fr 46px 70px;
 			font-size: 0.78rem;
+		}
+
+		.control-group > header {
+			grid-template-columns: 70px 46px 1fr 24px 30px 1fr 46px 70px;
 		}
 
 		.col-logo-label.row-label,
@@ -3079,19 +3106,174 @@
 		}
 	}
 
-	@media (max-width: 480px) {
-		.preview-row {
-			flex-direction: column;
+	/* ── Responsive: phone — hide favicon side, logo-only layout ──────── */
+
+	@media (max-width: 640px) {
+		/*
+		 * Do NOT set overflow-x on html/body/main — any overflow value
+		 * other than 'visible' on an ancestor breaks position:sticky.
+		 * Instead, contain overflow at the source with max-width.
+		 */
+		main {
+			padding: 0 0.5rem 2rem;
+			max-width: 100vw;
+			box-sizing: border-box;
+		}
+
+		/* ── Sticky preview: smaller, logo only ──────────────────────── */
+
+		.preview-sticky {
+			padding: 0.35rem 0.5rem;
+			margin: 0 -0.5rem;
 		}
 
 		.preview-gap,
-		.preview-actions-gap {
+		.favicon-panel {
+			display: none;
+		}
+
+		.preview-row {
+			justify-content: center;
+		}
+
+		.preview-panel {
+			flex: none;
+		}
+
+		/* Show guidelines control in the logo panel on mobile */
+		.guidelines-control-logo {
+			display: flex;
+		}
+
+		/*
+		 * Shrink the logo preview uniformly using CSS zoom.
+		 * Unlike transform:scale(), zoom changes the actual layout size
+		 * (256 * 0.625 = 160px) AND scales all children — including the
+		 * AppLogo's inline size, clip-path coordinates, and the
+		 * absolutely-positioned guidelines overlay — without needing
+		 * transform-origin hacks.
+		 */
+		.logo-preview-container {
+			zoom: 0.625;
+		}
+
+		.checkerboard {
+			padding: 0.5rem;
+		}
+
+		/* ── Preview actions: hide favicon buttons ───────────────────── */
+
+		.preview-actions-gap,
+		.favicon-actions {
 			display: none;
 		}
 
 		.preview-actions-row {
-			flex-direction: column;
-			align-items: center;
+			justify-content: center;
+			padding: 0.4rem 0;
+			margin-bottom: 0.5rem;
+		}
+
+		/* ── Controls grid: hide favicon side (cols 5-8), keep logo ─── */
+
+		.ctrl-row {
+			grid-template-columns: 64px 42px 1fr 24px;
+			font-size: 0.78rem;
+		}
+
+		.control-group > header {
+			grid-template-columns: 64px 42px 1fr 24px;
+			padding: 0.3rem 0.4rem;
+		}
+
+		.group-title {
+			grid-column: 1 / 4;
+		}
+
+		/* Align group reset with per-row reset buttons in col 4 */
+		.group-btn.reset-btn {
+			grid-column: 4;
+		}
+
+		.group-btn.lock-btn {
+			display: none;
+		}
+
+		/* Hide all favicon-side columns */
+		.col-lock,
+		.col-fav-slider,
+		.col-fav-num,
+		.col-fav-label,
+		.fav-icon-wrap {
+			display: none;
+		}
+
+		/* Reset button stays in col 4 */
+		.col-reset {
+			grid-column: 4;
+		}
+
+		.col-logo-label {
+			grid-column: 1;
+		}
+
+		.col-logo-num {
+			grid-column: 2;
+		}
+
+		.col-logo-slider {
+			grid-column: 3;
+		}
+
+		.col-logo-label.row-label,
+		.row-label {
+			font-size: 0.72rem;
+		}
+
+		/* ── Icon row: logo side spans cols 1-3 ──────────────────────── */
+
+		.logo-icon-wrap {
+			grid-column: 1 / 4;
+			grid-template-columns: 64px 1fr;
+		}
+
+		/* ── Emoji picker: full width ────────────────────────────────── */
+
+		.emoji-picker-area {
+			grid-column: 2 / -1;
+		}
+
+		.emoji-cell {
+			width: 52px;
+		}
+
+		/* ── Corner K: spans cols 2-3 ────────────────────────────────── */
+
+		.k-num-slider-logo {
+			grid-column: 2 / 4;
+		}
+
+		.k-num-slider-fav {
+			display: none;
+		}
+
+		.corner-k-row > .col-fav-label {
+			display: none;
+		}
+
+		/* ── General cleanup for narrow screens ──────────────────────── */
+
+		h2 {
+			font-size: 0.8rem;
+		}
+
+		.ctrl-row {
+			padding: 3px 0.4rem;
+		}
+
+		.preview-actions button {
+			padding: 0.3rem 0.65rem;
+			font-size: 0.8rem;
 		}
 	}
 </style>
