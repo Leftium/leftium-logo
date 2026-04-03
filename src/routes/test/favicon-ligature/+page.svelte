@@ -51,6 +51,30 @@
 
 	// Grid line stroke width (relative to viewBox)
 	const gridStroke = 0.02;
+
+	let copied = $state(false);
+
+	// Generate a standalone SVG of the L ligature for pasting into the /logo icon field.
+	// Uses currentColor so the /logo color mode system can control the fill.
+	// Square viewBox (rows × rows) centers the L horizontally within the larger dimension.
+	const vbSize = rows; // 5 — square viewBox
+	const lOffsetX = (vbSize - cols) / 2; // center the 3-wide L in the 5-wide box
+	const centeredPoints = vertices.map(([x, y]) => `${x + lOffsetX},${y}`).join(' ');
+	const ligatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vbSize} ${vbSize}">
+  <polygon points="${centeredPoints}" fill="currentColor"/>
+</svg>`;
+
+	async function copySvg() {
+		copied = true;
+		try {
+			await navigator.clipboard.writeText(ligatureSvg);
+		} catch (err) {
+			console.error('Failed to copy:', err);
+		}
+		setTimeout(() => {
+			copied = false;
+		}, 1500);
+	}
 </script>
 
 <main>
@@ -129,6 +153,20 @@
 		</div>
 	</div>
 
+	<div class="svg-output">
+		<h2>L Ligature SVG</h2>
+		<p>
+			Paste into the <a href="/logo">/logo</a> icon field. Use rotation + mirror controls there for the
+			veneer V variant.
+		</p>
+		<div class="textarea-wrap">
+			<textarea readonly rows="4">{ligatureSvg}</textarea>
+			<button class="copy-btn" onclick={copySvg}>
+				{copied ? 'Copied!' : 'Copy SVG'}
+			</button>
+		</div>
+	</div>
+
 	<details>
 		<summary>Geometry details</summary>
 		<h3>Unrotated vertices</h3>
@@ -186,6 +224,62 @@ size: {rW.toFixed(4)} × {rH.toFixed(4)}</pre>
 	.svg-wrap {
 		display: flex;
 		justify-content: center;
+	}
+
+	.svg-output {
+		max-width: 600px;
+		margin: 0 auto 1.5rem;
+		text-align: left;
+	}
+
+	.svg-output h2 {
+		font-size: 1.1rem;
+		margin: 0 0 0.25rem;
+		text-align: center;
+	}
+
+	.svg-output p {
+		font-size: 0.85rem;
+		color: #888;
+		margin: 0 0 0.75rem;
+		text-align: center;
+	}
+
+	.textarea-wrap {
+		position: relative;
+	}
+
+	.textarea-wrap textarea {
+		width: 100%;
+		font-family: monospace;
+		font-size: 0.82rem;
+		padding: 0.75rem;
+		border: 1px solid #ccc;
+		border-radius: 6px;
+		background: rgba(0, 0, 0, 0.03);
+		resize: vertical;
+		box-sizing: border-box;
+	}
+
+	.copy-btn {
+		position: absolute;
+		top: 0.5rem;
+		right: 0.5rem;
+		padding: 0.3rem 0.8rem;
+		font-size: 0.82rem;
+		border: 1px solid #0029c1;
+		border-radius: 4px;
+		background: #0029c1;
+		color: #fff;
+		cursor: pointer;
+		transition:
+			background 0.15s,
+			border-color 0.15s;
+	}
+
+	.copy-btn:hover {
+		background: #3973ff;
+		border-color: #3973ff;
 	}
 
 	svg {
