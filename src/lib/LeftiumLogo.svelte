@@ -1,4 +1,4 @@
-<script module>
+<script module lang="ts">
 	import { dev } from '$app/environment';
 	import { SvelteSet } from 'svelte/reactivity';
 
