@@ -3,7 +3,7 @@
 	import LeftiumLogo from '$lib/LeftiumLogo.svelte';
 	import { setAnimated } from '$lib/LeftiumLogo.svelte';
 	let boundingBox: 'square' | 'default' | 'encircled' | 'cropped' = $state('default');
-	let squircle = $state(true);
+	let squircle = $state(false);
 	// Start animated on main page
 	setAnimated(true);
 </script>
